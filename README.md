@@ -107,8 +107,6 @@ Sets up the four core **context files** — personas, product, company, and comp
 
 ---
 
-<<<<<<< HEAD
-=======
 ### slack-pm-drafter
 Drafts **Slack messages in Fahad's voice** for the four main PM communication types: product announcements, WIP progress updates, stakeholder next-steps updates, and blocker escalations to leadership. Runs a guided workflow (type → audience → channel → tone → content) or accepts a Quick Brief template to skip straight to the draft. Built around real message examples and JET-specific terminology (JET+, UFD, RCT, code cut, etc.).
 
