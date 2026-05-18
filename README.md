@@ -21,6 +21,10 @@ A collection of AI-powered skills for Product Managers, built for Claude (Cowork
 | [devils-advocate](#devils-advocate) | Challenges PRDs and specs to surface blind spots | `/devils-advocate` |
 | [context-bootstrapper](#context-bootstrapper) | Sets up product/company context files for all other skills | `/context-bootstrapper` |
 | [product-manager](#product-manager) | AI product owner for ticket management and sprint refinement | Auto-activates |
+<<<<<<< HEAD
+=======
+| [slack-pm-drafter](#slack-pm-drafter) | Drafts Slack messages in your voice — announcements, updates, escalations | `/slack-pm-drafter` |
+>>>>>>> 062ce06 (Add slack-pm-drafter skill)
 
 ---
 
@@ -103,6 +107,14 @@ Sets up the four core **context files** — personas, product, company, and comp
 
 ---
 
+<<<<<<< HEAD
+=======
+### slack-pm-drafter
+Drafts **Slack messages in Fahad's voice** for the four main PM communication types: product announcements, WIP progress updates, stakeholder next-steps updates, and blocker escalations to leadership. Runs a guided workflow (type → audience → channel → tone → content) or accepts a Quick Brief template to skip straight to the draft. Built around real message examples and JET-specific terminology (JET+, UFD, RCT, code cut, etc.).
+
+---
+
+>>>>>>> 062ce06 (Add slack-pm-drafter skill)
 ### product-manager
 An **AI Product Owner** for ticket management and sprint refinement. Works with Linear, GitHub Issues, and local Markdown files. Helps create, analyse, and improve tickets; identifies gaps in epics; and generates structured refinement session discussion points.
 
