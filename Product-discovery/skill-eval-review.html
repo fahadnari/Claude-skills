@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eval Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg: #faf9f5;
+      --surface: #ffffff;
+      --border: #e8e6dc;
+      --text: #141413;
+      --text-muted: #b0aea5;
+      --accent: #d97757;
+      --accent-hover: #c4613f;
+      --green: #788c5d;
+      --green-bg: #eef2e8;
+      --red: #c44;
+      --red-bg: #fceaea;
+      --header-bg: #141413;
+      --header-text: #faf9f5;
+      --radius: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lora', Georgia, serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .header h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .header .instructions {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-top: 0.25rem;
+    }
+    .header .progress {
+      font-size: 0.875rem;
+      opacity: 0.8;
+      text-align: right;
+    }
+
+    /* ---- Main content ---- */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ---- Sections ---- */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      flex-shrink: 0;
+    }
+    .section-header {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .section-body {
+      padding: 1rem;
+    }
+
+    /* ---- Config badge ---- */
+    .config-badge {
+      display: inline-block;
+      padding: 0.2rem 0.625rem;
+      border-radius: 9999px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-left: 0.75rem;
+      vertical-align: middle;
+    }
+    .config-badge.config-primary {
+      background: rgba(33, 150, 243, 0.12);
+      color: #1976d2;
+    }
+    .config-badge.config-baseline {
+      background: rgba(255, 193, 7, 0.15);
+      color: #f57f17;
+    }
+
+    /* ---- Prompt ---- */
+    .prompt-text {
+      white-space: pre-wrap;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    /* ---- Outputs ---- */
+    .output-file {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .output-file + .output-file {
+      margin-top: 1rem;
+    }
+    .output-file-header {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .output-file-header .dl-btn {
+      font-size: 0.7rem;
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+    .output-file-header .dl-btn:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    .output-file-content {
+      padding: 0.75rem;
+      overflow-x: auto;
+    }
+    .output-file-content pre {
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    .output-file-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .output-file-content iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+    .output-file-content table {
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+      width: 100%;
+    }
+    .output-file-content table td,
+    .output-file-content table th {
+      border: 1px solid var(--border);
+      padding: 0.375rem 0.5rem;
+      text-align: left;
+    }
+    .output-file-content table th {
+      background: var(--bg);
+      font-weight: 600;
+    }
+    .output-file-content .download-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    .output-file-content .download-link:hover {
+      background: var(--border);
+    }
+    .empty-state {
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    /* ---- Feedback ---- */
+    .prev-feedback {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.625rem 0.75rem;
+      margin-top: 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .prev-feedback-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+      color: var(--text-muted);
+    }
+    .feedback-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      resize: vertical;
+      color: var(--text);
+    }
+    .feedback-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    .feedback-status {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      min-height: 1.1em;
+    }
+
+    /* ---- Grades (collapsible) ---- */
+    .grades-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .grades-toggle:hover {
+      color: var(--accent);
+    }
+    .grades-toggle .arrow {
+      margin-right: 0.5rem;
+      transition: transform 0.15s;
+      font-size: 0.75rem;
+    }
+    .grades-toggle .arrow.open {
+      transform: rotate(90deg);
+    }
+    .grades-content {
+      display: none;
+      margin-top: 0.75rem;
+    }
+    .grades-content.open {
+      display: block;
+    }
+    .grades-summary {
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .grade-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .grade-pass { background: var(--green-bg); color: var(--green); }
+    .grade-fail { background: var(--red-bg); color: var(--red); }
+    .assertion-list {
+      list-style: none;
+    }
+    .assertion-item {
+      padding: 0.625rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8125rem;
+    }
+    .assertion-item:last-child { border-bottom: none; }
+    .assertion-status {
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+    .assertion-status.pass { color: var(--green); }
+    .assertion-status.fail { color: var(--red); }
+    .assertion-evidence {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      padding-left: 1.5rem;
+    }
+
+    /* ---- View tabs ---- */
+    .view-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 2rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .view-tab {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .view-tab:hover { color: var(--text); }
+    .view-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .view-panel { display: none; }
+    .view-panel.active { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+    /* ---- Benchmark view ---- */
+    .benchmark-view {
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .benchmark-table {
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.8125rem;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+    .benchmark-table th, .benchmark-table td {
+      padding: 0.625rem 0.75rem;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    .benchmark-table th {
+      font-family: 'Poppins', sans-serif;
+      background: var(--header-bg);
+      color: var(--header-text);
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .benchmark-table tr:hover { background: var(--bg); }
+    .benchmark-table tr.benchmark-row-with { background: rgba(33, 150, 243, 0.06); }
+    .benchmark-table tr.benchmark-row-without { background: rgba(255, 193, 7, 0.06); }
+    .benchmark-table tr.benchmark-row-with:hover { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-without:hover { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-table tr.benchmark-row-avg { font-weight: 600; border-top: 2px solid var(--border); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-with { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-without { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-delta-positive { color: var(--green); font-weight: 600; }
+    .benchmark-delta-negative { color: var(--red); font-weight: 600; }
+    .benchmark-notes {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    .benchmark-notes h3 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+    }
+    .benchmark-notes ul {
+      list-style: disc;
+      padding-left: 1.25rem;
+    }
+    .benchmark-notes li {
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      margin-bottom: 0.375rem;
+    }
+    .benchmark-empty {
+      color: var(--text-muted);
+      font-style: italic;
+      text-align: center;
+      padding: 3rem;
+    }
+
+    /* ---- Navigation ---- */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .done-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .done-btn:hover {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .done-btn.ready {
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+    .done-btn.ready:hover {
+      background: var(--accent-hover);
+    }
+    /* ---- Done overlay ---- */
+    .done-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .done-overlay.visible {
+      display: flex;
+    }
+    .done-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 2rem 3rem;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+    }
+    .done-card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .done-card p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .done-card .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .done-card button {
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .done-card button:hover {
+      background: var(--bg);
+    }
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 0.625rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .toast.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="height:100vh; display:flex; flex-direction:column;">
+    <div class="header">
+      <div>
+        <h1>Eval Review: <span id="skill-name"></span></h1>
+        <div class="instructions">Review each output and leave feedback below. Navigate with arrow keys or buttons. When done, copy feedback and paste into Claude Code.</div>
+      </div>
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <!-- View tabs (only shown when benchmark data exists) -->
+    <div class="view-tabs" id="view-tabs" style="display:none;">
+      <button class="view-tab active" onclick="switchView('outputs')">Outputs</button>
+      <button class="view-tab" onclick="switchView('benchmark')">Benchmark</button>
+    </div>
+
+    <!-- Outputs panel (qualitative review) -->
+    <div class="view-panel active" id="panel-outputs">
+    <div class="main">
+      <!-- Prompt -->
+      <div class="section">
+        <div class="section-header">Prompt <span class="config-badge" id="config-badge" style="display:none;"></span></div>
+        <div class="section-body">
+          <div class="prompt-text" id="prompt-text"></div>
+        </div>
+      </div>
+
+      <!-- Outputs -->
+      <div class="section">
+        <div class="section-header">Output</div>
+        <div class="section-body" id="outputs-body">
+          <div class="empty-state">No output files found</div>
+        </div>
+      </div>
+
+      <!-- Previous Output (collapsible) -->
+      <div class="section" id="prev-outputs-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="togglePrevOutputs()">
+            <span class="arrow" id="prev-outputs-arrow">&#9654;</span>
+            Previous Output
+          </div>
+        </div>
+        <div class="grades-content" id="prev-outputs-content"></div>
+      </div>
+
+      <!-- Grades (collapsible) -->
+      <div class="section" id="grades-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="toggleGrades()">
+            <span class="arrow" id="grades-arrow">&#9654;</span>
+            Formal Grades
+          </div>
+        </div>
+        <div class="grades-content" id="grades-content"></div>
+      </div>
+
+      <!-- Feedback -->
+      <div class="section">
+        <div class="section-header">Your Feedback</div>
+        <div class="section-body">
+          <textarea
+            class="feedback-textarea"
+            id="feedback"
+            placeholder="What do you think of this output? Any issues, suggestions, or things that look great?"
+          ></textarea>
+          <div class="feedback-status" id="feedback-status"></div>
+          <div class="prev-feedback" id="prev-feedback" style="display:none;">
+            <div class="prev-feedback-label">Previous feedback</div>
+            <div id="prev-feedback-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav" id="outputs-nav">
+      <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">&#8592; Previous</button>
+      <button class="done-btn" id="done-btn" onclick="showDoneDialog()">Submit All Reviews</button>
+      <button class="nav-btn" id="next-btn" onclick="navigate(1)">Next &#8594;</button>
+    </div>
+    </div><!-- end panel-outputs -->
+
+    <!-- Benchmark panel (quantitative stats) -->
+    <div class="view-panel" id="panel-benchmark">
+      <div class="benchmark-view" id="benchmark-content">
+        <div class="benchmark-empty">No benchmark data available. Run a benchmark to see quantitative results here.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Done overlay -->
+  <div class="done-overlay" id="done-overlay">
+    <div class="done-card">
+      <h2>Review Complete</h2>
+      <p>Your feedback has been saved. Go back to your Claude Code session and tell Claude you're done reviewing.</p>
+      <div class="btn-row">
+        <button onclick="closeDoneDialog()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---- Embedded data (injected by generate_review.py) ----
+    const EMBEDDED_DATA = {"skill_name": "product-discovery-coach", "runs": [{"id": "eval-trial-conversion-with_skill", "prompt": "I'm a PM at a B2B SaaS company. Our trial-to-paid conversion is stuck at 9% and my VP just said it's my top priority for Q2. I have about 6 weeks for discovery before I need to present findings and a recommended direction to the leadership team. Where do I start?", "eval_id": 1, "outputs": [{"name": "response.md", "type": "text", "content": "# Discovery Roadmap: Improving Trial-to-Paid Conversion from 9%\n\n## Your Situation\n\nYou have a clear, high-stakes problem: your trial-to-paid conversion is stuck at 9% and it's now your top priority. You have **6 weeks** before you need to present findings and a recommended direction to the leadership team.\n\nThis is a perfect discovery challenge \u2014 you're not being asked to \"just build the fix,\" you're being asked to *understand the problem first* so you can recommend the *right* direction.\n\nBelow is your structured discovery roadmap, following five phases. **Each phase builds on the last.** Don't skip ahead.\n\n---\n\n## Phase 1: Intake & Problem Framing\n\n### Step 1a: Validate Scope & Timeline\n\nBefore diving into analysis, lock in your working assumptions. Answer these:\n\n1. **Why is trial-to-paid conversion the #1 priority right now?**\n   - Is it because revenue is behind forecast?\n   - Is it because conversion is declining (not just low)?\n   - Is it because a competitor is solving this better?\n   - Understanding the *why* will help you prioritize which discovery questions matter most.\n\n2. **What does success look like at the end of this 6-week discovery?**\n   - Do you need a findings report with recommendations?\n   - Do you need a signed-off experiment plan or prototype to test one hypothesis?\n   - Do you need a full PRD and discovery plan for a larger initiative?\n   - **Be explicit:** This shapes how deep you go and what you output.\n\n3. **Who are the key stakeholders who must be aligned before you move to building?**\n   - Your VP (who set the priority)\n   - Head of Engineering (can they build what you recommend?)\n   - Head of Design (does this require UX changes?)\n   - Head of Sales or Customer Success (do they have insight into why trials don't convert?)\n   - CEO (if this is revenue-critical)\n   - **Identify these now** \u2014 you'll want them involved in Phase 2 and definitely at your final readout in Phase 5.\n\n### Step 1b: Define the Problem (5 Whys)\n\nYour symptom is clear: *\"Only 9% of trial users are converting to paid.\"*\n\nNow dig deeper with the **5 Whys**. Keep asking \"why\" until you get closer to root cause. Example path:\n\n- **Why?** \u2192 \"Most trials expire without conversion.\"\n- **Why?** \u2192 \"Trial users aren't activating core features or seeing value.\"\n- **Why?** \u2192 \"The onboarding flow is too complex / doesn't match their workflow / they don't know what to do first.\"\n- **Why?** \u2192 \"We never asked them what success looks like for their use case.\"\n- **Why?** \u2192 \"Sales handoff is broken / onboarding is one-size-fits-all / no in-app guidance.\"\n\n**Key insight:** You probably have *multiple root causes*, not one. Your discovery will test which ones matter most for *your* customer base.\n\n### Step 1c: Frame Your Problem Statement\n\nWrite out a **crisp 2\u20133 sentence problem statement** that includes:\n- **WHO** is affected (which customer segment? all trials? a subset?)\n- **WHAT** the problem is (what are they not doing? what are they doing instead?)\n- **WHY** it matters (what's the cost if this goes unsolved?)\n\n**Example (adapt to your context):**\n\n> \"Trial users in mid-market B2B SaaS are not converting to paid at acceptable rates (9% vs. our 25% goal). They're abandoning trials because they either don't see value in the first week, or they hit a friction point during setup and don't have support to unblock. Unresolved, this will cost us approximately $X ARR annually and prevent us from scaling efficiently.\"\n\n---\n\n## Phase 2: Impact Assessment\n\nOnce you've framed the problem, quantify the impact.\n\n### User Impact\n\n- **How many users are affected?**\n  - What % of all trials fall into this conversion bucket?\n  - Does this vary by company size, industry, use case?\n  - Example: \"500 trials/month, ~455 don't convert to paid\"\n\n- **How frequently do they hit the problem?**\n  - Is it every trial or specific workflows?\n  - Does it depend on onboarding choices, team size, integration depth?\n\n- **How severe is it?**\n  - Are trial users bouncing immediately (day 1-3) or later (day 20-28)?\n  - Are they churning from paid, too, or just not converting?\n  - Do they give feedback on why they didn't convert?\n\n- **What's the cost to them?**\n  - Lost opportunity to see if your product solves their problem\n  - Time wasted setting up (then abandoning)\n  - They may default to a competitor instead\n\n### Business Impact\n\n- **Revenue opportunity:**\n  - If you move from 9% \u2192 15% conversion: +$X ARR\n  - If you move from 9% \u2192 20% conversion: +$Y ARR\n  - Calculate based on: (trials/month) \u00d7 (conversion % lift) \u00d7 (ACV)\n\n- **Efficiency/cost savings:**\n  - Support tickets related to trial confusion or setup\n  - Sales effort wasted on leads that don't activate\n  - Churn from paid customers (are they also experiencing the same friction?)\n\n- **Strategic alignment:**\n  - Which company goal does this unlock? (e.g., \"reach 50M ARR,\" \"expand into mid-market\")\n  - Does this enable other initiatives (e.g., product-led growth)?\n\n- **Risk of NOT solving it:**\n  - What happens to CAC payback period if conversion stays at 9%?\n  - How does this impact unit economics?\n  - Could this become a competitive vulnerability?\n\n### Output: Impact Summary\n\nSynthesize into a **4\u20136 bullet summary** for stakeholder scanning:\n\n```\n**Trial-to-Paid Conversion Opportunity (9% \u2192 target 18%)**\n\n\u2022 Revenue upside: Moving conversion from 9% to 18% = +$1.2M ARR annually\n  (500 trials/month \u00d7 9% lift \u00d7 $22K ACV)\n\n\u2022 User friction point identified: 65% of trials abandon within first 3 days,\n  primarily during onboarding (via exit surveys)\n\n\u2022 Root cause hypothesis: Onboarding flow is 1:1 sales-focused; lacks\n  self-serve setup path and in-app guidance for SMB/mid-market users\n\n\u2022 Strategic alignment: This directly supports Q2 goal of \"achieve\n  product-led growth motion\" and improves CAC payback from 18\u219212 months\n\n\u2022 Cost of inaction: Competitors (Competitor X, Competitor Y) are\n  converting at 18-22%; we're losing share to better onboarding UX\n```\n\n---\n\n## Phase 3: Solution Exploration\n\nWith the problem and impact validated, now explore solutions. **Do not skip this step.** Use two frameworks:\n\n### Framework A: Opportunity Solution Tree (OST)\n\nThe OST is a visual map of:\n- **Opportunity** (what jobs do users want to do?)\n  \u2192 **Solutions** (multiple ways to enable that job)\n    \u2192 **Assumptions** (what has to be true for each solution to work?)\n\n**Set up your OST around the measurable outcome from Phase 2:**\n\n*Measurable Outcome:* \"Increase trial-to-paid conversion from 9% to 18%\"\n\n**Opportunities you might explore:**\n- Trials onboard faster and feel productive on day 1\n- Trial users understand pricing and ROI earlier in the trial\n- Trial users get unblocked when they hit setup friction (have support)\n- Trial users can import/use their own data immediately (not dummy data)\n- Trial users see value for *their specific use case* (not generic features)\n\nFor *each* opportunity, brainstorm multiple solutions:\n\nExample: *\"Trials onboard faster and feel productive on day 1\"*\n- Solution A: Add interactive in-app guided tour (vs. manual setup)\n- Solution B: Pre-populate trial workspace with their data/templates\n- Solution C: Offer optional live onboarding call during trial signup\n- Solution D: Simplify onboarding flow based on user role (seller vs. analyst vs. admin)\n\nFor *each* solution, identify assumptions:\n- Interactive tour reduces setup time by >50%\n- Users will engage with in-app guidance (vs. skip it)\n- Guided tour leads to feature discovery (users explore beyond the tour)\n\n**Action:** Build this OST collaboratively with your design and engineering leads. It forces alignment and surfaces what you actually know vs. assume.\n\n### Framework B: Lean Experiment Filter\n\nFor every proposed solution, ask:\n- **What's the smallest test of this assumption?** (1\u20132 weeks)\n- **What would we learn that would change our decision?**\n- **What's the cost if we're wrong before testing?**\n\nExample experiments:\n\n| Solution | Assumption | Lean Test | Success Signal |\n|----------|-----------|-----------|-----------------|\n| Interactive guided tour | Users will engage with in-app guidance | Wizard of Oz: manually walk 10 trial users through tour; measure completion rate | >70% complete the tour; >80% say it was helpful |\n| Live onboarding call | Calls reduce confusion & increase activation | Offer optional 15-min call to 20% of new trials; compare conversion to control | Call participants convert at >25% (vs. 9% baseline) |\n| Data import from CSV | Users want to test with their own data | Fake door: add \"Import your data\" button; measure clicks as proxy for demand | >30% of trials click button |\n| Role-based onboarding flow | Different roles have different needs | A/B test two onboarding paths (sales vs. analyst); measure activation by path | Analyst path has >15% conversion (vs. 9% overall) |\n\n**Prioritize tests that are:**\n1. **Low effort** \u2014 can run in parallel, low technical lift\n2. **High learning value** \u2014 test the riskiest assumption\n3. **Reversible** \u2014 no big commitments until validated\n\n---\n\n## Phase 4: One-Pager (Stakeholder Checkpoint)\n\n**Before you invest weeks in discovery, validate your understanding with Head of Product and Engineering.**\n\nYour one-pager should answer:\n- **Problem:** What are we solving and for whom?\n- **Impact:** Why does it matter (user + business)?\n- **Proposed direction:** What solution space are we exploring? (keep it high-level \u2014 not a spec)\n- **The ask:** \"Are we solving the right problem? Should we invest in this discovery?\"\n\n**Template:**\n\n```markdown\n# Trial-to-Paid Conversion Discovery: One-Pager\n\n## Problem\n9% of trial users convert to paid (target: 18%). Root cause analysis suggests:\n- 65% abandon within first 3 days\n- Primary friction: complex, sales-focused onboarding flow\n- Lack of guidance for self-serve setup\n\n## Impact\n- Revenue opportunity: +$1.2M ARR (9% \u2192 18% conversion lift)\n- Current CAC payback: 18 months \u2192 can improve to 12 months\n- Competitive risk: Competitors (X, Y) converting at 18-22%\n\n## Proposed Discovery Direction\nExplore 4\u20135 high-leverage opportunities:\n1. Reduce onboarding friction (faster setup, clearer next steps)\n2. Add in-trial guidance (tours, contextual help)\n3. Enable self-serve data import (test with own data)\n4. Customize onboarding by user role (not one-size-fits-all)\n5. Add optional human support (live onboarding calls)\n\nTest riskiest assumptions via lean experiments (4\u20136 weeks).\n\n## The Ask\nIs this the right problem to focus on? Should we invest 6 weeks in discovery + testing?\nAny reframing before we kickoff?\n```\n\n**Action:** Schedule a 30-minute sync with Head of Product + Engineering Lead. Go through the one-pager. Get thumbs-up (or reframe) before Phase 5.\n\n---\n\n## Phase 5: Discovery Plan & Execution Timeline\n\nOnce you have stakeholder alignment, build your detailed discovery plan.\n\n### Step 5a: Dependency Check\n\nBefore finalizing the plan, flag any **external dependencies** that could block you:\n\n| Team | What to Check | Relevant to Trial Conversion? |\n|------|---------------|-----|\n| **Product / Data Analytics** | Can you get trial user behavior data? Event tracking accessible? | **HIGH** \u2014 you need to understand drop-off points |\n| **Customer Success** | Can they provide trial user feedback? Do exit surveys exist? | **HIGH** \u2014 voice of customer is critical |\n| **Engineering** | Can they build/test the solutions you're considering? How fast can they iterate? | **MEDIUM-HIGH** \u2014 impacts which experiments are feasible |\n| **Design** | Are they available for rapid iteration and testing? | **MEDIUM-HIGH** \u2014 onboarding redesign requires design work |\n| **Sales** | What do they observe about trial handoff quality? Any training gaps? | **MEDIUM** \u2014 sales-to-trial handoff may be part of the problem |\n| **Legal / Compliance** | Any privacy/data handling concerns with trial data collection? | **LOW** \u2014 unless you're testing new data collection |\n\n**For each dependency, capture:**\n- Team name\n- What you need from them (data, feedback, review, build)\n- When (which phase of discovery)\n\n### Step 5b: Build Your Discovery Timeline (6 Weeks)\n\nWork backwards from your deadline. You have **~6 weeks** (late April \u2192 end of May) to present findings.\n\n**Proposed milestone structure:**\n\n```\nWeek 1: Kickoff + Problem Validation (2\u20133 days)\n\u251c\u2500 Cross-functional kickoff (PM, Design, Eng)\n\u251c\u2500 Finalize problem framing & acceptance criteria\n\u2514\u2500 Plan data analysis & user research\n\nWeek 2: Problem Analysis & Research (Full week)\n\u251c\u2500 Analyze trial user behavior data (drop-off points, feature adoption)\n\u251c\u2500 Conduct exit interviews (10\u201315 churned trial users)\n\u251c\u2500 Gather sales/CS feedback (what do they see?)\n\u2514\u2500 Synthesize initial insights\n\nWeek 3: Solution Exploration + OST Workshop (Full week)\n\u251c\u2500 Opportunity Solution Tree workshop (PM, Design, Eng)\n\u251c\u2500 Brainstorm multiple solutions per opportunity\n\u251c\u2500 Identify riskiest assumptions\n\u2514\u2500 Finalize 4\u20135 experiments to run in parallel\n\nWeek 4\u20135: Lean Experiments (2 weeks)\n\u251c\u2500 Experiment 1: In-app guided tour (wizard of oz, 10 users)\n\u251c\u2500 Experiment 2: Role-based onboarding flow (A/B test, 50 users)\n\u251c\u2500 Experiment 3: Live onboarding call (20 trials)\n\u251c\u2500 Experiment 4: Data import button (fake door, measure demand)\n\u2514\u2500 Ongoing: Collect qualitative feedback from experiment participants\n\nWeek 6: Synthesis + Leadership Readout (2\u20133 days)\n\u251c\u2500 Analyze experiment results\n\u251c\u2500 Identify winning direction(s)\n\u251c\u2500 Draft findings report & recommendation\n\u2514\u2500 Present to VP + Leadership team\n```\n\n### Step 5c: Discovery Plan Tasks\n\nFor each milestone, break into **delegatable tasks**:\n\n```markdown\n## Kick-off (Week 1, Day 1\u20133)\n\n| Task | Owner | Duration | Dependency | Deliverable |\n|------|-------|----------|------------|-------------|\n| Align on problem framing & acceptance criteria | PM | 1 day | None | Problem statement (agreed) |\n| Data audit: identify available trial data | PM + Analytics | 1 day | None | Data source map |\n| Plan user research approach (exit interviews, surveys) | PM + Designer | 0.5 day | None | Research plan (protocol, sample size) |\n| Engineering feasibility assessment | Engineer | 1 day | OST from previous phase | Risk assessment |\n\n---\n\n## Problem Analysis & Research (Week 2)\n\n| Task | Owner | Duration | Dependency | Deliverable |\n|------|-------|----------|------------|-------------|\n| Analyze trial user behavior (cohort analysis, drop-off curves) | Analytics | 2 days | Data audit complete | Behavior analysis report |\n| Conduct 10\u201315 exit interviews | PM + Designer | 3 days | Research plan complete | Interview notes (aggregated themes) |\n| Gather sales/CS feedback (30-min calls with 3\u20135 people) | PM | 1.5 days | None | Sales/CS input summary |\n| Synthesize findings (pain points, opportunities, segments) | PM | 1 day | All research done | Synthesis doc (themes, insight summary) |\n\n---\n\n## Solution Exploration + OST (Week 3)\n\n| Task | Owner | Duration | Dependency | Deliverable |\n|------|-------|----------|------------|-------------|\n| Opportunity Solution Tree workshop | PM + Design + Eng | 3 hours | Synthesis doc complete | OST diagram (opportunities, solutions, assumptions) |\n| Assumptions mapping & prioritization | PM + Eng | 1 day | OST complete | Prioritized assumptions list (riskiest first) |\n| Design experiment plans & success criteria | Designer + PM | 2 days | OST complete | 4\u20135 experiment specs with success metrics |\n| Engineering feasibility + resource planning | Engineer | 1 day | Experiment specs done | Resource estimate per experiment |\n\n---\n\n## Lean Experiments (Weeks 4\u20135)\n\n| Task | Owner | Duration | Dependency | Deliverable |\n|------|-------|----------|------------|-------------|\n| Exp 1: In-app tour (wizard of oz) \u2014 recruit & run | Designer + PM | 5 days | Exp plan done | Session notes (10 participants) |\n| Exp 2: Role-based onboarding (A/B test setup) | Engineer + Designer | 3 days | Exp plan done | A/B setup + tracking ready |\n| Exp 3: Live onboarding calls (coordinate + facilitating) | PM + CSM | 5 days | Exp plan done | Call notes + feedback (20 participants) |\n| Exp 4: Data import button (fake door) | Engineer | 2 days | Exp plan done | Analytics instrumentation live |\n| Continuous feedback collection & synthesis | PM | Ongoing | Exp running | Weekly synthesis (what we're learning) |\n\n---\n\n## Synthesis + Readout (Week 6)\n\n| Task | Owner | Duration | Dependency | Deliverable |\n|------|-------|----------|------------|-------------|\n| Analyze all experiment results | PM + Analytics | 1.5 days | All experiments complete | Results summary (win/loss per experiment) |\n| Identify winning direction + next steps | PM + Design + Eng | 1 day | Results analyzed | Recommended direction (1\u20132 solutions to pursue) |\n| Draft findings report | PM | 1.5 days | Results analyzed | Findings doc (problem, insights, recommendation) |\n| Leadership readout | PM | 2 hours | Findings doc ready | Presentation + alignment on next phase |\n```\n\n---\n\n## Phase 5d: Visual Discovery Plan\n\nHere's a simple **HTML timeline** (save as `.html`):\n\n```html\n<!DOCTYPE html>\n<html>\n<head>\n    <title>Trial-to-Paid Conversion Discovery Plan</title>\n    <style>\n        body { font-family: Arial, sans-serif; margin: 20px; }\n        .timeline { display: flex; justify-content: space-between; margin: 20px 0; }\n        .week { flex: 1; border: 1px solid #ddd; padding: 10px; margin-right: 10px; background: #f9f9f9; }\n        .week h3 { margin: 0 0 10px; color: #333; }\n        .task { background: #e8f4f8; padding: 8px; margin: 5px 0; font-size: 12px; border-left: 3px solid #0066cc; }\n        .milestone { background: #fff3cd; padding: 8px; margin: 5px 0; font-weight: bold; border-left: 3px solid #ff9800; }\n        .owner { color: #666; font-size: 11px; }\n    </style>\n</head>\n<body>\n    <h1>Trial-to-Paid Conversion Discovery: 6-Week Plan</h1>\n    <p><strong>Goal:</strong> Understand why 9% of trials convert, identify top 2\u20133 high-impact solutions, and recommend direction for Q2+.</p>\n\n    <div class=\"timeline\">\n        <div class=\"week\">\n            <h3>Week 1: Kickoff</h3>\n            <div class=\"milestone\">\ud83d\udd37 Alignment Milestone</div>\n            <div class=\"task\"><strong>Problem framing</strong><br><span class=\"owner\">PM</span></div>\n            <div class=\"task\"><strong>Data audit</strong><br><span class=\"owner\">PM + Analytics</span></div>\n            <div class=\"task\"><strong>Research plan</strong><br><span class=\"owner\">PM + Designer</span></div>\n        </div>\n\n        <div class=\"week\">\n            <h3>Week 2: Research</h3>\n            <div class=\"task\"><strong>Behavior analysis</strong><br><span class=\"owner\">Analytics</span></div>\n            <div class=\"task\"><strong>Exit interviews</strong><br><span class=\"owner\">PM + Designer</span></div>\n            <div class=\"task\"><strong>Sales/CS input</strong><br><span class=\"owner\">PM</span></div>\n            <div class=\"task\"><strong>Synthesis</strong><br><span class=\"owner\">PM</span></div>\n        </div>\n\n        <div class=\"week\">\n            <h3>Week 3: Explore</h3>\n            <div class=\"milestone\">\ud83d\udd37 OST Milestone</div>\n            <div class=\"task\"><strong>OST Workshop</strong><br><span class=\"owner\">PM + Design + Eng</span></div>\n            <div class=\"task\"><strong>Experiment design</strong><br><span class=\"owner\">PM + Design + Eng</span></div>\n        </div>\n\n        <div class=\"week\">\n            <h3>Week 4\u20135: Test</h3>\n            <div class=\"milestone\">\ud83d\udd37 Experiments Running</div>\n            <div class=\"task\"><strong>Tour test</strong><br><span class=\"owner\">Designer + PM</span></div>\n            <div class=\"task\"><strong>Onboarding A/B</strong><br><span class=\"owner\">Engineer</span></div>\n            <div class=\"task\"><strong>Live calls</strong><br><span class=\"owner\">PM + CSM</span></div>\n            <div class=\"task\"><strong>Data import (fake door)</strong><br><span class=\"owner\">Engineer</span></div>\n        </div>\n\n        <div class=\"week\">\n            <h3>Week 6: Present</h3>\n            <div class=\"milestone\">\ud83d\udd37 Leadership Readout</div>\n            <div class=\"task\"><strong>Analyze results</strong><br><span class=\"owner\">PM + Analytics</span></div>\n            <div class=\"task\"><strong>Draft findings</strong><br><span class=\"owner\">PM</span></div>\n            <div class=\"task\"><strong>Present to VP</strong><br><span class=\"owner\">PM</span></div>\n        </div>\n    </div>\n\n    <h2>Key Milestones</h2>\n    <ul>\n        <li><strong>Week 1 (Kickoff):</strong> Problem framing agreed. Team aligned on research approach.</li>\n        <li><strong>Week 2 (Research):</strong> Trial user behavior mapped. Top pain points identified from interviews.</li>\n        <li><strong>Week 3 (Solution Exploration):</strong> OST complete. 4\u20135 experiments prioritized and ready to run.</li>\n        <li><strong>Weeks 4\u20135 (Experiments):</strong> Lean tests running in parallel. Early signals emerging on winning directions.</li>\n        <li><strong>Week 6 (Synthesis):</strong> Results analyzed. Recommendation ready for leadership presentation.</li>\n    </ul>\n\n    <h2>Dependencies</h2>\n    <ul>\n        <li><strong>Data Analytics Team:</strong> Provide trial cohort data, drop-off curves, feature adoption metrics by Week 1.</li>\n        <li><strong>Customer Success:</strong> Provide access to trial users for exit interviews. Facilitate 3\u20135 internal calls by Week 2.</li>\n        <li><strong>Engineering:</strong> Feasibility assessment on 4 proposed experiments by Week 3. Resource commitment for parallel testing in Weeks 4\u20135.</li>\n        <li><strong>Design:</strong> Available for rapid iteration on onboarding UX and experiment design. Parallel work capacity for Weeks 3\u20135.</li>\n    </ul>\n</body>\n</html>\n```\n\n---\n\n## Your Next Steps\n\n**This week (Week 1):**\n\n1. \u2705 **Validate scope** \u2014 Answer the three clarifying questions above (why now, success criteria, stakeholders)\n2. \u2705 **Frame the problem** \u2014 Use the 5 Whys. Write a crisp 2\u20133 sentence problem statement.\n3. \u2705 **Quantify impact** \u2014 Gather baseline metrics (trial volume, conversion, churn, revenue impact).\n4. \u2705 **Brief your stakeholders** \u2014 Send the one-pager to Head of Product + Engineering Lead. Get alignment before you invest weeks.\n5. \u2705 **Kickoff with your trio** \u2014 PM, Design, Engineering \u2014 align on problem, goals, and working norms.\n\n**Week 2 onwards:**\n- Follow the timeline and task breakdown above.\n- Build the OST collaboratively.\n- Run lean experiments in parallel.\n- Synthesize findings weekly (don't wait until Week 6).\n\n---\n\n## Key Principles to Remember\n\n1. **Stay in problem space longer than feels comfortable.** Don't jump to solutions in Week 1. By Week 3, you should have deep conviction that you're solving the right problem.\n\n2. **The one-pager is a forcing function, not a formality.** If you can't write a crisp one-pager by end of Week 1, the problem isn't clear enough yet. Go back and do more 5 Whys.\n\n3. **Discovery is a team sport.** Your trio (PM, Design, Eng) should be involved from Week 1, not handed a spec at the end. Their input on feasibility, design constraints, and engineering leverage will shape what's actually valuable to build.\n\n4. **Every proposed solution should have a lean test.** If you can't test an assumption in 1\u20132 weeks, you're probably thinking too big. Break it down. Run tests in parallel to maximize learning in 6 weeks.\n\n5. **The discovery plan is a living document.** Update it as you learn. By Week 3, you may realize some experiments aren't worth running or new ones have emerged. That's healthy. Build in explicit \"reflect and adapt\" checkpoints weekly.\n\n---\n\n## Summary\n\nYou have **6 weeks** to move from \"trial conversion is stuck at 9%\" to \"here's why and here's what we should build next.\"\n\nFollow the five phases:\n1. **Intake & Framing** \u2192 Problem statement\n2. **Impact Assessment** \u2192 Quantified opportunity\n3. **Solution Exploration** \u2192 OST + lean experiments\n4. **One-Pager** \u2192 Stakeholder alignment checkpoint\n5. **Discovery Plan** \u2192 Timeline, tasks, and visual roadmap\n\n**Start this week with Phase 1.** Answer the clarifying questions, frame the problem, quantify the impact, and get stakeholder buy-in on your approach.\n\nYou've got this. The fact that you're starting with discovery instead of jumping to solutions puts you ahead of most teams.\n\n---\n\n## Appendix: Useful Frameworks & Questions\n\n### Problem Framing (5 Whys Template)\n\n```\n1. Symptom: What are we observing?\n   \u2192 \"Only 9% of trial users convert to paid\"\n\n2. Why #1: What's preventing the desired outcome?\n   \u2192 \"Users aren't finding value in the trial\"\n\n3. Why #2: What specifically aren't they finding?\n   \u2192 \"They can't figure out how to set up and test our features\"\n\n4. Why #3: Why is setup hard?\n   \u2192 \"The onboarding flow is designed for sales-led deals, not self-serve users\"\n\n5. Why #4: Why doesn't it support self-serve?\n   \u2192 \"We never prioritized SMB/self-serve segments; we built for enterprise only\"\n\nRoot cause: Onboarding experience is misaligned with how self-serve users actually discover and evaluate software.\n```\n\n### User Impact Assessment\n\n- Segment trials by company size, industry, use case. Which segments have lowest conversion?\n- Track time-to-first-value for each segment. Where are users getting stuck?\n- Exit survey: \"Why didn't you convert?\" Aggregate the top 5 reasons.\n- Feature adoption: Which features are trial users activating? Which are they skipping?\n\n### Business Impact Calculation\n\n```\nBase metrics:\n- Trials per month: 500\n- Current conversion: 9% (45 paid per month)\n- Target conversion: 18% (90 paid per month)\n- Average Contract Value (ACV): $22,000\n- Lift: 9% \u2192 18% = +45 paid customers/month = 540/year\n- Annual revenue impact: 540 \u00d7 $22,000 = $11.88M (but you'll achieve incrementally)\n\nMore conservative (reach 15%):\n- Lift: 9% \u2192 15% = +30 paid customers/month = 360/year\n- Annual revenue impact: 360 \u00d7 $22,000 = $7.92M\n\nSupport cost savings:\n- Today: trial onboarding confusion = 10 support tickets/week\n- If onboarding is clearer, could reduce to 3/week\n- Cost per ticket: $50 (support time)\n- Annual savings: 7 tickets/week \u00d7 50 weeks \u00d7 $50 = $17,500\n\nCAC payback improvement:\n- Sales & marketing cost per trial: ~$200 (rough)\n- Cost of converting one customer: $200 / 0.09 = $2,222 in CAC\n- If conversion improves to 15%, CAC = $200 / 0.15 = $1,333\n- Payback period improves from 18 \u2192 12 months\n```\n\nGood luck with your discovery. Come back to this document weekly as your checkpoint.\n"}], "grading": {"expectations": [{"text": "The response asks or explicitly surfaces clarifying questions (why now, what success looks like, who stakeholders are)", "passed": true, "evidence": "Step 1a (Validate Scope & Timeline) explicitly poses three clarifying questions: 'Why is trial-to-paid conversion the #1 priority right now?', 'What does success look like at the end of this 6-week discovery?', and 'Who are the key stakeholders who must be aligned before you move to building?' with detailed sub-questions for each."}, {"text": "The response references or uses the 5 Whys framework for problem framing", "passed": true, "evidence": "Step 1b titled 'Define the Problem (5 Whys)' introduces the framework explicitly and provides a complete worked example: 'Why \u2192 Most trials expire without conversion \u2192 Why \u2192 Trial users aren't activating core features...' continuing through multiple layers. Framework is also included as a template in the Appendix."}, {"text": "The response does NOT jump straight to solutions without first framing the problem", "passed": true, "evidence": "The response structure dedicates Phases 1-3 (approximately 40% of content) to problem framing before solutions. Phase 1 focuses on intake and problem framing, Phase 2 on impact assessment, and only Phase 3 introduces solution exploration. The response explicitly states in Step 3: 'Do not skip this step' and emphasizes 'Stay in problem space longer than feels comfortable. Don't jump to solutions in Week 1.'"}, {"text": "The response references opportunity mapping, OST, or continuous discovery frameworks", "passed": true, "evidence": "Phase 3 (Solution Exploration) explicitly introduces 'Framework A: Opportunity Solution Tree (OST)' with detailed explanation of structure (Opportunity \u2192 Solutions \u2192 Assumptions), worked examples showing 'Trials onboard faster and feel productive on day 1' with multiple solutions listed. Also includes 'Framework B: Lean Experiment Filter' as part of continuous discovery methodology, with a table showing experiments mapped to assumptions."}, {"text": "The response mentions producing a one-pager as a checkpoint or deliverable", "passed": true, "evidence": "Phase 4 is entirely dedicated to 'One-Pager (Stakeholder Checkpoint)' stating 'Before you invest weeks in discovery, validate your understanding with Head of Product and Engineering.' Includes complete template with sections for Problem, Impact, Proposed direction, and The ask. Timeline includes this as Week 1 deliverable."}, {"text": "The response describes a discovery plan with milestones or phases across the 6-week timeline", "passed": true, "evidence": "Phase 5 (Discovery Plan & Execution Timeline) provides detailed 6-week structure with clear milestones: Week 1 (Kickoff + Problem Validation), Week 2 (Problem Analysis & Research), Week 3 (Solution Exploration + OST Workshop), Week 4-5 (Lean Experiments), Week 6 (Synthesis + Leadership Readout). Each week has specific deliverables, task ownership, and dependencies. Timeline includes detailed task tables and a visual HTML timeline with milestone markers."}], "summary": {"passed": 6, "failed": 0, "total": 6, "pass_rate": 1.0}, "execution_metrics": {"tool_calls": {}, "total_tool_calls": 0, "files_created": 1, "errors_encountered": 0}, "timing": {"executor_duration_seconds": 88.3, "total_duration_seconds": 88.3}, "claims": [{"claim": "The response uses the 5 Whys framework with a worked example", "type": "process", "verified": true, "evidence": "Step 1b provides explicit worked example with 5 layers of 'Why' questions leading to root causes like 'Sales handoff is broken / onboarding is one-size-fits-all / no in-app guidance.'"}, {"claim": "The response provides a complete 6-week timeline with task ownership and dependencies", "type": "process", "verified": true, "evidence": "Phase 5 includes detailed task tables for each week (Kickoff, Problem Analysis, Solution Exploration, Experiments, Synthesis) with Owner, Duration, Dependency, and Deliverable columns for each task."}, {"claim": "The response includes an OST template or example ready for the user to adapt", "type": "process", "verified": true, "evidence": "Phase 3 provides explicit OST structure with example opportunities ('Trials onboard faster...', 'Trial users understand pricing...', etc.) and multiple solutions per opportunity with assumption examples."}, {"claim": "The one-pager is positioned as a stakeholder alignment checkpoint before diving into execution", "type": "process", "verified": true, "evidence": "Phase 4 states: 'Before you invest weeks in discovery, validate your understanding with Head of Product and Engineering' and includes action: 'Schedule a 30-minute sync with Head of Product + Engineering Lead.'"}, {"claim": "The response emphasizes problem framing over solution jumping", "type": "quality", "verified": true, "evidence": "Key Principles section (item 1) explicitly states: 'Stay in problem space longer than feels comfortable. Don't jump to solutions in Week 1.' This principle is reinforced throughout the structure."}], "eval_feedback": {"suggestions": [{"reason": "While all assertions pass, none of them verify the actual quality or completeness of the response relative to best practices in product discovery. For example, the response could have superficial 5 Whys coverage or an OST that doesn't actually help prioritization. Consider adding assertions that verify: (1) The 5 Whys reaches genuine root causes, not surface-level issues; (2) The OST example actually shows testable assumptions, not vague ones; (3) The experiment designs include specific success metrics that would change the recommendation."}, {"reason": "No assertion checks whether the timeline is realistic or properly scoped for 6 weeks. The response proposes running 4 parallel experiments in Weeks 4-5 while also conducting final synthesis in Week 6 \u2014 this could be verified by checking if the parallel experiment tasks have realistic duration estimates and true feasibility in 2 weeks."}, {"reason": "No assertion validates whether the response actually addresses the user's stated context constraint (6-week discovery before leadership presentation). Recommend adding a check that the final milestone (Week 6 readout) explicitly outputs a format suitable for leadership decision-making."}], "overall": "All assertions pass with strong evidence. The response demonstrates comprehensive understanding of discovery methodology, structured problem framing, and clear execution planning. However, assertions are primarily presence-based (does the framework exist?) rather than quality-based (is it well-applied?). Consider enhancing future evals with depth checks on framework application quality."}}}, {"id": "eval-trial-conversion-without_skill", "prompt": "I'm a PM at a B2B SaaS company. Our trial-to-paid conversion is stuck at 9% and my VP just said it's my top priority for Q2. I have about 6 weeks for discovery before I need to present findings and a recommended direction to the leadership team. Where do I start?", "eval_id": 1, "outputs": [{"name": "response.md", "type": "text", "content": "# Trial-to-Paid Conversion Discovery Plan (6-Week Discovery Phase)\n\nYour 9% trial-to-paid conversion is significantly below industry benchmarks (typical B2B SaaS ranges from 25-40%), so there's meaningful upside here. With 6 weeks before your leadership presentation, here's a structured discovery approach.\n\n## Phase 1: Establish Your Baseline (Weeks 1-2)\n\n### 1. Map the Current Funnel\nStart by understanding exactly where drop-off occurs:\n- **Trial signup to activation**: How many users complete initial setup? At what step do they abandon?\n- **Activation to engagement**: Of activated users, how many use core features in their first week?\n- **Engagement to conversion decision**: What's the conversion rate among users who demonstrated strong engagement vs. weak engagement?\n\nGet specific metrics:\n- % of trial users who complete onboarding\n- % who use core features at least once\n- % who use features multiple times\n- Days-to-first-value (how long until they experience value)\n- Overall trial-to-paid conversion by cohort/plan/segment\n\n**Deliverable**: A waterfall chart showing exactly where your 91% drop-off happens.\n\n### 2. Segment Your Trial Users\nDon't treat all trials as one cohort:\n- By company size (SMB vs. mid-market vs. enterprise)\n- By use case / product fit (which features/integrations are they interested in?)\n- By industry vertical (if applicable)\n- By traffic source (organic, ads, sales-led, partnership, etc.)\n\n**Insight to pursue**: Do some segments have much higher conversion? (This suggests product-market fit exists in some segments but not others.)\n\n### 3. Analyze Historical Data\n- Pull conversion data for the last 12 months (or longer)\n- Calculate conversion rates by cohort, segment, signup source\n- Identify any trends: Is 9% consistent or did something recently drop it?\n- Compare to your CAC and LTV: Does 9% conversion make economic sense, or is this unsustainable?\n\n**Deliverable**: A cohort analysis showing whether conversion varies significantly by segment.\n\n## Phase 2: Listen to Users (Weeks 2-4)\n\nYour data tells you *what* happened. Users will tell you *why*. This is critical.\n\n### 4. Interview Trial Users (Both Converters and Non-Converters)\nAim for 15-20 interviews total:\n\n**Non-converters (10-15 interviews)**:\n- Recruit users who completed onboarding but didn't convert\n- Ask open-ended questions:\n  - \"Walk me through your experience with the trial. What were you hoping to accomplish?\"\n  - \"At what point did you decide this wasn't right for you?\"\n  - \"What would have changed your mind?\"\n  - \"How did our product compare to alternatives you considered?\"\n- Listen for: missing features, poor UX, wrong pricing, wrong use case, or misaligned expectations set by marketing\n\n**Converters (3-5 interviews)**:\n- Understanding what *worked* is as important as understanding what failed\n- \"What was the turning point for you?\"\n- \"What feature or experience convinced you to pay?\"\n- \"How did our product integrate into your workflow?\"\n\n### 5. Conduct Feature Usage Analysis\nGo beyond login metrics:\n- Which features are used in free trials?\n- Which features are used by converters vs. non-converters?\n- How does time-to-first-key-feature-use correlate with conversion?\n\n**Insight to pursue**: If 80% of non-converters never use Feature X, but 90% of converters do, that's your activation indicator.\n\n### 6. Analyze the Competitive Context\n- What alternatives did users consider?\n- Why did they choose you initially (or why didn't they)?\n- What's holding them back compared to competitors?\n- Are there specific features you're missing that competitors have?\n\n### 7. Map the Post-Trial Decision Process\n- Who decides whether to convert? (User, manager, procurement?)\n- What's the approval process?\n- How long does the decision take?\n- Are pricing or terms blockers?\n\n**Insight to pursue**: If decision-makers aren't engaging with the trial, you may have a stakeholder alignment problem, not a product problem.\n\n## Phase 3: Identify Root Causes & Patterns (Weeks 4-5)\n\n### 8. Synthesize Findings into Root Causes\nLook for patterns across data and interviews:\n\n**Common categories to investigate**:\n- **Onboarding friction**: Users can't get started or don't understand how to use the product\n- **Time-to-value misalignment**: Users need more time/setup than a trial allows, or the trial doesn't showcase value quickly\n- **Feature gaps**: Core functionality is missing for their use case\n- **Pricing/contract friction**: Price is too high, billing terms don't work, or commitment is too risky\n- **Wrong audience**: Users trialing don't fit your actual product/market fit\n- **Bad product-market fit in trial**: Users want something fundamentally different from what you offer\n\n### 9. Create a Hypothesis Framework\nFor each root cause you identify, develop a hypothesis:\n- **If** [root cause] is the blocker\n- **Then** fixing [specific thing] should improve conversion by [estimated %]\n\nExample:\n- \"If 40% of non-converters abandon because they can't connect their data source, then improving the integration onboarding could increase conversion by 5-8%\"\n- \"If decision-makers aren't seeing ROI numbers, then adding a ROI calculator to the trial experience could increase conversion by 3-5%\"\n\n## Phase 4: Develop Your Findings Deck (Week 5-6)\n\n### 10. Present to Leadership\nYour presentation should include:\n\n**Section 1: The Opportunity**\n- Current state: 9% conversion, implied annual churn/revenue impact\n- Benchmarks: What's industry standard? (Usually 25-40%)\n- Upside: If you move from 9% to 20%, what's the revenue impact?\n\n**Section 2: Root Causes (Your Key Findings)**\n- Top 3-5 root causes, ranked by impact and frequency in interviews\n- Evidence: Show data + quotes from user interviews\n- Segment analysis: Does the problem vary by customer segment?\n\n**Section 3: Recommended Direction**\nBased on impact and feasibility, recommend 2-3 priority areas:\n1. **Quick wins** (1-2 sprints): Easy changes that address blockers\n   - Example: Improve onboarding copy, add missing integration, simplify pricing\n2. **Medium-term improvements** (next quarter): Requires some product work\n   - Example: Redesign trial activation flow, build integration API, create ROI calculator\n3. **Longer-term strategic shifts** (if applicable): Major product/market repositioning\n   - Example: Target different company size, vertical, or use case\n\n**Section 4: Success Metrics & Success Plan**\n- How will you measure if changes worked? (Trial conversion %, engagement %, days-to-value)\n- What's your target for 6 months? (Example: move from 9% to 15%)\n- How will you validate each hypothesis?\n\n---\n\n## Key Questions to Keep in Mind Throughout Discovery\n\n1. **Activation**: Do users ever experience the core value of your product in the trial?\n2. **Speed to value**: Can they see ROI/benefit within the trial window (usually 7-14 days)?\n3. **Audience fit**: Are you trialing the right companies/personas?\n4. **Competitive positioning**: Why choose you over alternatives?\n5. **Decision process**: Who actually decides to convert, and are they seeing the trial?\n\n---\n\n## Timeline & Workplan\n\n- **Week 1**: Establish metrics, pull data, create cohort analysis\n- **Week 2**: Finish interviews (non-converters), start synthesizing patterns\n- **Week 3**: Complete interviews (converters), deep-dive feature analysis\n- **Week 4**: Finalize root cause analysis, create hypothesis framework\n- **Week 5**: Draft findings deck, validate key insights with stakeholders\n- **Week 6**: Polish presentation, prepare for leadership review\n\n---\n\n## Avoiding Common Pitfalls\n\n- **Don't assume you know the problem**: The VP might think it's pricing; data might show it's onboarding friction. Follow the data.\n- **Don't ignore segment variance**: A 9% average might hide 3% in one segment and 20% in another. Find where product-market fit exists.\n- **Don't skip converters**: Understanding why *some* users convert is as important as understanding why most don't.\n- **Don't oversimplify solutions**: Adding a feature won't help if the real problem is that prospects need 2 weeks to see value but your trial is 14 days.\n- **Don't present problems without solutions**: Come with 2-3 realistic options, ranked by impact.\n\n---\n\n## Success Looks Like\n\nBy week 6, leadership should have:\n1. Clear understanding of *where* conversion breaks down (waterfall)\n2. Clear understanding of *why* it breaks down (3-5 specific root causes)\n3. Confidence that solutions are informed by user data, not guesses\n4. A prioritized roadmap for Q2 with realistic conversion targets\n5. A clear hypothesis-testing approach for Q2 to measure if fixes worked\n"}], "grading": {"expectations": [{"text": "The response asks or explicitly surfaces clarifying questions (why now, what success looks like, who stakeholders are)", "passed": false, "evidence": "The response does not ask clarifying questions upfront. It immediately launches into a structured 4-phase discovery plan without first asking 'why now', 'who are the stakeholders', or 'what does success look like'. While 'Success Looks Like' is addressed at the very end (lines 167-174), this is descriptive output rather than questions directed back to the user to clarify scope and context."}, {"text": "The response references or uses the 5 Whys framework for problem framing", "passed": false, "evidence": "No mention of the 5 Whys framework or iterative why-based questioning appears anywhere in the response. The approach focuses on structured data analysis and user interviews, but does not employ the specific 5 Whys methodology."}, {"text": "The response does NOT jump straight to solutions without first framing the problem", "passed": true, "evidence": "The response structures problem framing before solutions. Phases 1-3 (lines 5-102) focus entirely on understanding the problem through funnel mapping, user segmentation, data analysis, interviews, and root cause synthesis. Only in Phase 4 (lines 105-132) does it move to recommendations. The approach explicitly emphasizes analysis before recommendations, e.g., line 41: 'Your data tells you what happened. Users will tell you why. This is critical.'"}, {"text": "The response references opportunity mapping, OST, or continuous discovery frameworks", "passed": false, "evidence": "The response does not explicitly mention opportunity mapping, OST (Open Space Technology), or continuous discovery frameworks by name. While the approach aligns with continuous discovery principles (user interviews, iterative learning), these frameworks are not referenced or named."}, {"text": "The response mentions producing a one-pager as a checkpoint or deliverable", "passed": false, "evidence": "No one-pager is mentioned anywhere in the response. Deliverables mentioned include: waterfall chart (line 20), cohort analysis (line 37), and findings deck (line 107), but no one-pager is called out as a checkpoint or intermediate deliverable."}, {"text": "The response describes a discovery plan with milestones or phases across the 6-week timeline", "passed": true, "evidence": "Clear 4-phase discovery plan with timeline: Phase 1 (Weeks 1-2, lines 5-37), Phase 2 (Weeks 2-4, lines 39-81), Phase 3 (Weeks 4-5, lines 83-103), Phase 4 (Weeks 5-6, lines 105-132). Detailed week-by-week breakdown in 'Timeline & Workplan' section (lines 147-153) specifies tasks for each week across the full 6-week period."}], "summary": {"passed": 2, "failed": 4, "total": 6, "pass_rate": 0.33}, "execution_metrics": {"tool_calls": {}, "total_tool_calls": 2, "files_created": ["response.md", "metrics.json"], "errors_encountered": 0}, "timing": {"executor_duration_seconds": 38.2, "total_duration_seconds": 38.2}, "claims": [{"claim": "The response provides a structured discovery plan for a 9% trial-to-paid conversion problem", "type": "process", "verified": true, "evidence": "Response includes 4 distinct phases with specific activities, deliverables, and a week-by-week timeline spanning the full 6-week period."}, {"claim": "Industry benchmarks for trial conversion are 25-40%", "type": "factual", "verified": true, "evidence": "Stated in lines 3 and 112. This aligns with general B2B SaaS industry data."}, {"claim": "The response immediately provides a practical, actionable plan", "type": "quality", "verified": true, "evidence": "The response is highly structured and prescriptive, offering specific activities (interviews, data analysis, segmentation) with clear deliverables and timeline. This is immediately actionable but lacks collaborative framing."}], "eval_feedback": {"suggestions": [{"reason": "Assertion 1 is important but is too easily failed by any response that doesn't explicitly ask questions back to the user upfront. A strong discovery coach should ask clarifying questions, but the assertion doesn't capture whether the plan itself is well-scoped or if critical context is missing. Consider refining to: 'The response either asks clarifying questions OR explicitly addresses scope constraints (timeline, team size, data access, stakeholder availability)'."}, {"reason": "Assertions 2 and 4 reference specific frameworks (5 Whys, opportunity mapping, OST, continuous discovery) but don't verify that the spirit of those frameworks is present. The response demonstrates many principles of continuous discovery (user-centered, iterative learning, hypothesis-driven) but doesn't name the framework. Consider whether the assertion should require explicit naming or whether the underlying methodology matters more."}, {"reason": "Assertion 5 (one-pager deliverable) is very specific and may be too prescriptive for this domain. The response calls out a 'findings deck' which serves a similar checkpoint function. Consider whether a 'one-pager' is the right intermediate deliverable to mandate, or if the assertion should be broadened to 'a concise summary checkpoint by mid-point (week 3-4)'."}, {"reason": "No assertion captures whether the discovery plan is realistic or feasible given resource constraints. The plan calls for 15-20 interviews in 2-3 weeks (Phase 2), which may be overly optimistic for a single PM. Consider adding an assertion about whether the plan accounts for practical constraints (team capacity, data availability, interview recruitment time)."}], "overall": "The response passes 2/6 assertions. The failures are driven by the response's prescriptive, solution-oriented framing rather than a collaborative, question-first approach. The assertions themselves are reasonable but some (especially 2, 4, and 5) may be too rigid about specific framework names rather than evaluating whether the underlying methodology is sound."}}}, {"id": "eval-checkout-abandonment-with_skill", "prompt": "My team has been asked to improve the mobile checkout experience for our e-commerce platform. Customers are dropping off at the payment step \u2014 we're seeing a 40% abandonment rate there. I need to run discovery and share findings in 4 weeks. Legal will need to review any changes to how we handle payment data. Can you help me plan this out?", "eval_id": 2, "outputs": [{"name": "response.md", "type": "text", "content": "# Product Discovery Plan: Mobile Checkout Abandonment (40% Drop-off)\n\n**Prepared by:** Product Discovery Coach\n**Date:** 2026-03-18\n**Timeline:** 4 weeks (by 2026-04-15)\n**Primary Stakeholders:** PM, Design, Engineering + Legal (critical dependency)\n\n---\n\n## Executive Summary\n\nYour team is facing a significant conversion leakage at the payment step (40% abandonment rate on mobile checkout). This discovery will clarify the root causes, quantify the business impact, explore solution options, and deliver a validated discovery plan with all dependencies mapped \u2014 particularly Legal's data handling review needs.\n\n**What you'll have at the end:** A findings report with recommended directions, a validated one-pager, a visual discovery timeline, and signed-off assumptions about payment data handling.\n\n---\n\n## Phase 1: Problem Framing\n\n### Clarifying Context (Your Inputs)\n\nBased on your message, here's what we know:\n- **Symptom:** 40% of users abandon at the payment step on mobile\n- **Timeline:** 4 weeks for discovery\n- **Key constraint:** Legal review required for any changes to payment data handling\n- **Outcome needed:** Clear findings + recommendations (likely a findings report and/or PRD readiness)\n\n### The Problem Statement (Working Hypothesis)\n\n**Mobile customers are abandoning at the payment step at 40% (2x+ typical mobile conversion loss), causing significant revenue leakage. This is likely driven by a combination of friction (form complexity, payment method friction, trust signals, or technical errors on mobile), creating a gap between intent-to-purchase and successful payment completion. Left unsolved, this costs the business approximately X% of annual mobile revenue [TBD during discovery].**\n\n**Note:** During discovery, we'll validate whether the abandonment is truly payment-specific or if it's earlier in checkout (shipping address, cart review, etc.).\n\n---\n\n## Phase 2: Impact Assessment\n\n### User Impact\n- **Volume affected:** Mobile checkout users attempting to pay (quantify: % of mobile traffic that reaches payment step)\n- **Frequency:** On every repeat mobile purchase\n- **Severity:** Blocker \u2014 failure = lost sale; users cannot complete intended transaction\n- **User cost:** Frustration, time waste, abandoned purchase intent, switched to desktop or competitor\n\n### Business Impact\n- **Revenue opportunity:** 40% abandonment recovery = significant revenue lift (calculate: mobile checkout revenue \u00d7 40% \u00d7 avg order value)\n- **Customer experience impact:** Mobile-first customers perceive brand as broken or untrustworthy during critical moment\n- **Support cost:** Likely elevated support load from payment errors or \"why was I charged twice?\" inquiries\n- **Strategic alignment:** Mobile revenue is [specify: 30%? 50%?] of total e-commerce \u2014 directly impacts company growth OKR\n- **Risk if unsolved:** Continued revenue leakage, competitive disadvantage if competitors offer better mobile checkout, potential customer lifetime value loss\n\n**Rough impact estimate (to validate during discovery):**\n- If mobile represents 40% of revenue ($X M annually) and 40% abandon at payment, that's ~$0.16X M in lost revenue per year.\n\n---\n\n## Phase 3: Solution Exploration\n\n### Hypotheses to Test\n\nBased on the problem statement, we'll explore these solution spaces:\n\n1. **Friction in form entry** \u2014 Mobile form complexity, auto-fill not working, input validation errors\n2. **Payment method concerns** \u2014 Limited payment options, unclear payment method selection, 3D Secure friction\n3. **Trust/security concerns** \u2014 No security badges, unclear data privacy, SSL cert display issues\n4. **Technical issues** \u2014 Timeouts, network errors, failed transactions that don't surface clearly to user\n5. **Abandonment trigger timing** \u2014 Are users dropping off *before* paying (lost intent) or *after* attempting and failing?\n\n### Lean Experiment Approach\n\nFor each hypothesis, we'll run low-cost tests before building:\n- **Session recordings** (1\u20132 weeks) \u2014 Watch 20\u201330 mobile checkout sessions to identify top 3 friction points\n- **User interviews** (1\u20132 weeks) \u2014 Talk to 8\u201310 users who abandoned at payment to understand barriers\n- **Analytics deep-dive** (1 week) \u2014 Segment abandonment by: device type, payment method, user cohort, time in checkout\n- **A/B test setup** (2 weeks) \u2014 Design 2\u20133 high-impact low-friction tweaks (e.g., progress indicator, payment method simplification) and run in parallel\n\n---\n\n## Phase 4: One-Pager Checkpoint\n\n**This is not included in full here but will be created during discovery.**\n\nThe one-pager will answer:\n- **Problem:** 40% mobile checkout abandonment at payment step\n- **Impact:** $X M annual revenue opportunity + customer trust damage\n- **Proposed exploration:** We'll test 3\u20134 high-priority solution areas (friction, payment method, trust, technical) via mixed methods\n- **The ask:** \"Should we invest in this discovery? Are we focused on the right problem?\"\n\n**Stakeholder alignment checkpoint:** Share this with Head of Product and Engineering Lead at Week 1.5 to confirm direction before scaling effort.\n\n---\n\n## Phase 5: Dependency Check & Discovery Plan\n\n### Critical Dependencies\n\n| Team | Input Needed | When | Notes |\n|------|-------------|------|-------|\n| **Legal** | Data handling review, payment PII compliance, 3D Secure consent flow review | Week 2\u20133 (before building any solution) | **BLOCKING** \u2014 Any changes to how payment data flows must be reviewed. Flag early to avoid delays. |\n| **Engineering** | Technical feasibility assessment, payment gateway constraints, mobile app vs. web checkout architecture | Week 1 (kick-off) + Week 3 (post-exploration) | Clarify: Is this web, app, or both? Do we control the payment form or is it 3rd-party? |\n| **Data/Analytics** | Abandonment funnel data, payment error logs, device/browser breakdowns | Week 1 | Needed to frame problem precisely and identify high-leverage segments to test |\n| **Customer Success** | Common payment failure reasons from support tickets, user feedback themes | Week 1 | Uncover patterns from post-abandonment user outreach |\n| **Product/Marketing** | Conversion benchmarks for competitors, mobile checkout UX trends, current mobile strategy | Week 1 | Context for solution exploration and prioritization |\n\n### Discovery Plan (4-Week Timeline)\n\n**Target deadline:** 2026-04-15 (end of Week 4)\n**Final output:** Findings report + recommended direction + validated one-pager\n\n---\n\n#### **WEEK 1: Kick-off & Problem Validation**\n\n**Milestone:** Kick-off complete, problem statement validated\n\n| Task | Owner | Time | Deliverable | Dependencies |\n|------|-------|------|-------------|--------------|\n| Kick-off sync (PM, Design, Eng) | PM | 2h | Alignment on goals, working norms, definition of \"success\" at end | None |\n| Gather abandonment data (funnel, errors, segments) | Analytics | 5h | Dashboard showing: # abandoners, drop-off point, payment method breakdown, device type, geography | None |\n| Pull support ticket themes (last 30 days) | CS | 3h | Summary: top 5 payment failure reasons from tickets | None |\n| Clarify technical architecture | Engineer | 2h | One-pager: Web vs. app? Custom form or 3rd-party gateway? Constraints? | Kick-off sync |\n| **Early Legal flag** | PM \u2192 Legal | 1h | Notify Legal that discovery involves payment data; set up Week 2\u20133 review checkpoint | Kick-off sync |\n\n**Artifacts:** Problem statement refined, data dashboard, architecture diagram\n\n---\n\n#### **WEEK 2: Deep Exploration (Research)**\n\n**Milestone:** Root causes identified, hypotheses prioritized\n\n| Task | Owner | Time | Deliverable | Dependencies |\n|------|-------|------|-------------|--------------|\n| Session recordings (20\u201330 mobile checkout sessions) | Design/UXR | 8h | Video compilation with annotated friction points; top 3 blockers identified | Analytics data |\n| User interviews (8\u201310 abandoners) | PM/UXR | 8h | Interview notes; synthesis of barriers (technical, trust, friction, intent) | Support ticket themes |\n| Analytics deep-dive (event tracking, errors) | Analytics | 5h | Breakdown: where exactly do users drop? Which payment methods? Device types? | Data dashboard |\n| Competitive checkout audit | Design | 4h | Summary of 3\u20135 competitor mobile checkouts; UX patterns observed | None |\n| Opportunity Solution Tree (OST) workshop | PM + Trio | 3h | OST diagram: Business outcome \u2192 Opportunities \u2192 Solutions | Deep-dive outputs |\n\n**Artifacts:** Session recording summary, interview synthesis, OST diagram, competitive insights\n\n---\n\n#### **WEEK 3: Solution Exploration & Assumptions**\n\n**Milestone:** Top 3\u20134 solutions identified, riskiest assumptions surfaced\n\n| Task | Owner | Time | Deliverable | Dependencies |\n|------|-------|------|-------------|--------------|\n| Ideation session (Design, PM, Eng) | PM | 2h | 3\u20134 solution concepts for top opportunities; pro/con for each | OST diagram |\n| Assumption mapping (per solution) | PM + Eng | 3h | For each solution: riskiest assumptions, testable predictions, pass/fail criteria | Ideation outputs |\n| **Legal review checkpoint** | PM \u2194 Legal | 2h (async) | Legal confirms: Which solutions require data flow changes? What's in-scope vs. blocked? | Assumption mapping |\n| Lean experiment design (pick 2 tests) | Design + PM | 4h | Pick highest-learning, lowest-effort tests: e.g., wire-frame A/B test, wizard-of-oz validation, prototype smoke test | Legal sign-off on data handling |\n| Prototype prep (if needed) | Design | 4h | Quick wireframes or clickable prototype for highest-priority solution | Ideation outputs |\n\n**Artifacts:** Solution concepts, assumption map, Legal sign-off memo, experiment design docs, prototype (if built)\n\n---\n\n#### **WEEK 4: Synthesis & Recommendations**\n\n**Milestone:** Findings report complete, recommended direction clear\n\n| Task | Owner | Time | Deliverable | Dependencies |\n|------|-------|------|-------------|--------------|\n| Analyse experiment results (if live) | Analytics + PM | 3h | Did we validate or invalidate our assumptions? What changed our thinking? | Week 3 experiment results |\n| Synthesis workshop (trio) | PM | 2h | Consolidate all findings; draw 3\u20135 key conclusions; identify recommended direction | All research artifacts |\n| Draft findings report | PM | 5h | Narrative report: Problem \u2192 Impact \u2192 What we learned \u2192 Recommended direction (with trade-offs) | Synthesis outputs |\n| Create one-pager (checkpoint) | PM | 2h | One-page summary for Head of Product + Engineering Lead alignment | Findings report |\n| Stakeholder readout prep | PM | 2h | Slide deck for findings presentation (Head of Product, Engineering Lead, optional: Executive sponsor) | One-pager + report |\n| **Final Legal sign-off** | PM \u2194 Legal | 1h | Confirm that recommended direction complies with data handling requirements | Findings report |\n\n**Artifacts:** Findings report, one-pager, slide deck, Legal approval memo\n\n---\n\n### Key Dependencies to Manage Proactively\n\n1. **Legal is the critical path.** Flag them in Week 1. Set explicit review checkpoints at Week 2 (early read) and Week 3 (detailed assumptions review). Don't wait until Week 4 to get sign-off.\n\n2. **Engineering input on architecture is essential for feasibility.** Get clarity in Week 1 on what's technically possible (e.g., can we add a progress indicator? Reduce form fields?).\n\n3. **Analytics data quality.** If your event tracking doesn't distinguish payment errors from user abandonment, you may need to add tracking. Flag this early.\n\n4. **Cross-team availability.** Schedule the kick-off, ideation, and synthesis workshops asynchronously-friendly, or confirm team capacity.\n\n---\n\n## Visual Discovery Timeline (ASCII)\n\n```\nWEEK 1: Kick-off & Data             WEEK 2: Research              WEEK 3: Solutions & Legal      WEEK 4: Synthesis & GO/NO-GO\n\u2502                                   \u2502                              \u2502                               \u2502\n\u251c\u2500 Kick-off (Trio)                  \u251c\u2500 Sessions (Design)           \u251c\u2500 Ideation (Trio)             \u251c\u2500 Synthesis (Trio)\n\u251c\u2500 Get abandonment funnel           \u251c\u2500 Interviews (PM)             \u251c\u2500 Assumptions (PM/Eng)        \u251c\u2500 Draft findings\n\u251c\u2500 Support ticket themes            \u251c\u2500 Analytics deep-dive         \u251c\u2500 Legal review point          \u251c\u2500 One-pager\n\u251c\u2500 Tech architecture clarity        \u251c\u2500 Competitive audit           \u251c\u2500 Design 2 experiments        \u251c\u2500 Final Legal sign-off\n\u251c\u2500 LEGAL FLAG (early)               \u251c\u2500 OST workshop (Trio)         \u251c\u2500 Prototypes (if needed)      \u251c\u2500 Readout to leadership\n\u2502                                   \u2502                              \u2502                               \u2502\nDeliverables:                       Deliverables:                Deliverables:                  Deliverables:\n- Problem statement (refined)        - Session synthesis           - Solution concepts            - Findings report\n- Data dashboard                     - Interview notes             - Assumption map               - One-pager\n- Architecture doc                   - OST diagram                 - Legal memo                   - Slide deck\n                                    - Competitive intel           - Experiment design            - Final approval\n\nLegend: PM = Product Manager | Eng = Engineer | Design = Designer | Legal = Legal Team | UXR = User Research\n```\n\n---\n\n## Success Criteria\n\nBy end of Week 4, you'll have:\n\n\u2705 **Clear root cause hypothesis** \u2014 Validated through research (not guesses)\n\u2705 **Quantified impact** \u2014 Specific $ revenue opportunity or % improvement potential\n\u2705 **3\u20135 solution concepts** \u2014 Prioritized by impact + feasibility + effort\n\u2705 **Validated assumptions** \u2014 Riskiest ones tested or de-risked\n\u2705 **Legal sign-off** \u2014 On data handling approach for recommended direction\n\u2705 **Executive alignment** \u2014 Head of Product + Engineering agree on next step (PRD, deeper testing, or pivot)\n\u2705 **Discovery plan** \u2014 Ready to transition to either: Specification phase, Prototyping + testing phase, or Scaled experiment\n\n---\n\n## Next Steps (Immediate Actions)\n\n1. **Confirm timeline & stakeholder availability** \u2014 Book the Week 1 kick-off (2h), Week 3 ideation (2h), Week 4 synthesis (2h)\n2. **Notify Legal immediately** \u2014 Let them know discovery is underway; request a 30-min intro call to map data handling concerns early\n3. **Request analytics data** \u2014 Ask for the abandonment funnel, payment error logs, and device/browser breakdown\n4. **Schedule one-pager validation** \u2014 Plan a 30-min sync with Head of Product at end of Week 1 or start of Week 2\n\n---\n\n## Appendix: Questions to Refine Problem Scope\n\nAs you launch discovery, consider validating these to tighten the problem statement:\n\n- **Is the 40% drop-off *mobile-specific*, or does desktop also have issues?** (If desktop is also 40%, the root cause may be payment-related vs. mobile UX)\n- **What payment methods are available?** (Credit card only? Wallet options? Buy-now-pay-later?)\n- **Is the user abandoning *before* payment attempt or *after*?** (Abandonment before = friction/trust; after = payment failure)\n- **Are there known payment errors or timeouts?** (Technical issue or UX/friction?)\n- **What's the customer segment breakdown?** (New vs. repeat customers; geography; device type)\n- **What does success look like from Legal's perspective?** (Data minimization? Explicit consent flows? PCI compliance confirmation?)\n\n---\n\n## Suggested Kick-off Agenda (Week 1, ~60 min)\n\n1. **Problem & goal** (10 min) \u2014 Review problem statement, desired outcome\n2. **Success definition** (10 min) \u2014 What does the team need to feel confident in the direction?\n3. **Research plan overview** (10 min) \u2014 Walk through Weeks 2\u20133 activities (sessions, interviews, OST)\n4. **Role clarity** (10 min) \u2014 Who owns what? PM research coordination, Design sessions, Eng feasibility?\n5. **Dependency mapping** (10 min) \u2014 Flag Legal, Analytics, CS; confirm check-in cadence\n6. **Go/no-go decision process** (10 min) \u2014 How will the team decide on recommended direction at end of Week 4?\n\n---\n\n**Document prepared:** 2026-03-18\n**Ready to launch?** Confirm Week 1 kick-off date and notify Legal. You're set to begin.\n"}], "grading": {"expectations": [{"text": "The response acknowledges and includes the Legal dependency the user explicitly mentioned", "passed": true, "evidence": "Legal is identified as a 'critical dependency' in the executive summary, listed as 'BLOCKING' in the critical dependencies table, and given explicit checkpoints in Weeks 1, 2-3, and 4 with specific review tasks ('Early Legal flag', 'Legal review checkpoint', 'Final Legal sign-off'). The appendix includes a question about 'What does success look like from Legal's perspective?'"}, {"text": "The response challenges or digs deeper into the problem rather than accepting 'improve checkout' at face value", "passed": true, "evidence": "The response questions whether abandonment is truly payment-specific or occurs earlier in checkout. It identifies 5 specific hypotheses to test (friction, payment methods, trust/security, technical issues, timing). The appendix includes 6 clarifying questions including 'Is the 40% drop-off mobile-specific?', 'Is the user abandoning before payment attempt or after?', and 'Are there known payment errors or timeouts?' demonstrating active problem validation rather than surface-level acceptance."}, {"text": "The response produces or describes a discovery plan structured around the 4-week deadline", "passed": true, "evidence": "A complete 'Discovery Plan (4-Week Timeline)' section details the deadline as 2026-04-15 with four distinct phases: Week 1 (Kick-off & Problem Validation), Week 2 (Deep Exploration), Week 3 (Solution Exploration & Assumptions), and Week 4 (Synthesis & Recommendations). Each week includes specific milestones, tasks with owners and time estimates, deliverables, and dependencies. An ASCII timeline visualizes all 4 weeks with their deliverables."}, {"text": "The response mentions at least one lean experiment or research approach (e.g. user interviews, prototype test, data analysis)", "passed": true, "evidence": "Multiple lean research approaches are detailed: 'Session recordings (20\u201330 mobile checkout sessions)', 'User interviews (8\u201310 abandoners)', 'Analytics deep-dive (event tracking, errors)', 'Competitive checkout audit', and in Week 3 'Lean experiment design (pick 2 tests)' with specific examples: 'wire-frame A/B test, wizard-of-oz validation, prototype smoke test'. Week 2 explicitly calls this the 'Deep Exploration (Research)' phase with 8h for sessions, 8h for interviews, and 5h for analytics."}, {"text": "The response references working backwards from the deadline to identify milestones or phases", "passed": true, "evidence": "The plan explicitly states 'Target deadline: 2026-04-15' and structures four phases that build sequentially toward synthesis and recommendations. The dependencies section notes 'Don't wait until Week 4 to get sign-off' on Legal, demonstrating backward planning. Week 4 is positioned as the endpoint where findings are synthesized, one-pager created, and final approval obtained. The 'Next Steps' section emphasizes the sequence: 'Book the Week 1 kick-off' first, then 'Notify Legal immediately', reflecting a backward-planned cadence."}], "summary": {"passed": 5, "failed": 0, "total": 5, "pass_rate": 1.0}, "execution_metrics": {"tool_calls": {}, "total_tool_calls": 0, "files_created": ["response.md"], "errors_encountered": 0}, "timing": {"executor_duration_seconds": 65.8, "total_duration_seconds": 65.8}, "claims": [{"claim": "40% abandonment at payment step is the target problem", "type": "factual", "verified": true, "evidence": "Response opens with this exact figure from the user's prompt and maintains it throughout the document"}, {"claim": "Discovery timeline is 4 weeks", "type": "factual", "verified": true, "evidence": "Stated in executive summary 'Timeline: 4 weeks (by 2026-04-15)' and in discovery plan section 'Target deadline: 2026-04-15 (end of Week 4)'"}, {"claim": "Legal review is blocking discovery progress", "type": "quality", "verified": true, "evidence": "Response explicitly marks Legal as 'BLOCKING' in critical dependencies, assigns it Week 2-3 review checkpoints, and advises 'Flag them in Week 1. Set explicit review checkpoints at Week 2 (early read) and Week 3 (detailed assumptions review). Don't wait until Week 4 to get sign-off.'"}, {"claim": "Session recordings, user interviews, and analytics are planned research methods", "type": "process", "verified": true, "evidence": "Week 2 tasks explicitly allocate: '8h' for session recordings, '8h' for user interviews, '5h' for analytics deep-dive with specific deliverables named for each"}, {"claim": "The plan includes hypothesis testing before solution commitment", "type": "quality", "verified": true, "evidence": "Phase 3 explicitly frames exploration as 'Hypotheses to Test' with 5 named hypotheses, and Week 3 task includes 'Lean experiment design (pick 2 tests)' with examples of low-friction validation approaches before building"}], "eval_feedback": {"suggestions": [], "overall": "All five assertions pass with clear, substantive evidence. The response demonstrates deep engagement with the discovery problem: it acknowledges Legal as a blocking dependency with specific checkpoint planning, actively challenges the stated problem through clarifying questions and hypothesis identification, structures a comprehensive 4-week plan with weekly milestones and task-level detail, incorporates lean research methods (interviews, session recordings, analytics, A/B testing), and explicitly works backward from the deadline to identify critical path and phasing. The response does not merely accept the problem statement but systematically de-risks it through structured discovery. Assertions are well-calibrated to measure genuine capability rather than surface-level compliance."}}}, {"id": "eval-checkout-abandonment-without_skill", "prompt": "My team has been asked to improve the mobile checkout experience for our e-commerce platform. Customers are dropping off at the payment step \u2014 we're seeing a 40% abandonment rate there. I need to run discovery and share findings in 4 weeks. Legal will need to review any changes to how we handle payment data. Can you help me plan this out?", "eval_id": 2, "outputs": [{"name": "response.md", "type": "text", "content": "# Mobile Checkout Abandonment Discovery Plan\n## 4-Week Product Discovery Initiative\n\n---\n\n## Executive Summary\n\nA 40% abandonment rate at the payment step represents significant revenue leakage and indicates critical friction in your mobile checkout flow. This 4-week discovery plan will systematically identify root causes, uncover user pain points, and develop evidence-based recommendations for improvement. The plan is structured to meet a 4-week timeline while building a strong case for engineering investment and securing legal approval for any payment data handling changes.\n\n---\n\n## Discovery Goals\n\n### Primary Objectives\n1. **Identify root causes** of the 40% payment step abandonment\n2. **Understand user friction points** in the mobile checkout experience\n3. **Map legal and compliance requirements** for payment data handling changes\n4. **Develop prioritized recommendations** for improvement\n5. **Build stakeholder alignment** across product, engineering, legal, and business teams\n\n### Success Metrics\n- Clear identification of 3-5 primary abandonment drivers\n- Quantified impact estimates for top friction points\n- Legal review checklist for potential improvements\n- Executive recommendation document with implementation roadmap\n\n---\n\n## Week-by-Week Plan\n\n### Week 1: Data Analysis & Problem Definition\n\n**Days 1-2: Quantitative Analysis**\n- Pull checkout funnel metrics from analytics (Google Analytics, Mixpanel, Amplitude, or custom tracking)\n- Segment abandonment data by:\n  - Device type (mobile OS - iOS vs Android, device size)\n  - User demographics (new vs returning, geography, device age)\n  - Traffic source (organic, paid, direct)\n  - Payment method attempted (card, wallet options, etc.)\n  - Device performance metrics (connection speed, device memory)\n- Identify where exactly users are dropping off within payment step\n  - Payment method selection\n  - Card entry form\n  - Billing address entry\n  - Final confirmation\n  - Payment processing timeout\n\n**Deliverable:** Abandonment funnel map with segment breakdown\n\n**Days 3-5: Session Replay & Behavioral Analysis**\n- Set up or access session recording tools (Hotjar, FullStory, Smartlook, etc.)\n- Filter for completed vs. abandoned checkout sessions\n- Watch 20-30 abandoned payment sessions to observe:\n  - Form interaction patterns (typing speed, corrections, hesitations)\n  - Error handling (how users respond to validation errors)\n  - Payment method switching behavior\n  - Navigation patterns (back button usage, tab switching)\n  - Time spent at each step\n- Document recurring behavioral patterns and frustrations\n\n**Deliverable:** Session replay findings document with key patterns\n\n**End of Week 1 Deliverable:** Quantitative problem statement defining the scope and specific abandonment patterns\n\n---\n\n### Week 2: User Research & Root Cause Discovery\n\n**Days 1-3: User Interviews**\n- Recruit 8-12 users who recently abandoned at payment step via:\n  - Email to recent abandoners (use email/SMS campaigns)\n  - In-app surveys with incentives\n  - User research platforms (Userlytics, TryMyUI, etc.)\n- Conduct 30-minute phone/video interviews covering:\n  - What were they trying to accomplish?\n  - What caused them to abandon?\n  - Specific friction points (form complexity, trust issues, payment options)\n  - Device/technical issues (load times, error messages)\n  - Alternative actions taken (went to competitor, tried desktop, different payment method)\n  - Would they return? What would change their mind?\n- Track verbatim feedback on:\n  - Form usability issues\n  - Payment method availability\n  - Trust and security concerns\n  - Performance/technical problems\n  - Unexpected costs or charges\n\n**Deliverable:** Interview synthesis document with key themes and quotes\n\n**Days 4-5: In-App & Ad Hoc Research**\n- Deploy post-abandonment surveys to users who drop at payment:\n  - Quantitative questions (Likert scales) on friction areas\n  - Open-ended question on abandonment reason\n  - Question on likelihood to return\n- Analyze competitor mobile checkout experiences:\n  - Test 3-5 direct competitors' mobile checkout flows\n  - Document best practices (form design, payment options, trust signals)\n  - Compare to your current experience\n\n**Deliverable:** Survey results summary + competitive analysis\n\n**End of Week 2 Deliverable:** Root cause analysis identifying primary abandonment drivers with evidence from research\n\n---\n\n### Week 3: Solution Discovery & Legal Planning\n\n**Days 1-2: Pain Point Prioritization**\n- Create impact matrix mapping:\n  - Frequency of each pain point (how many users affected)\n  - Severity of impact on abandonment rate\n  - User emotion/frustration level\n- Rank top 5-7 improvement opportunities with estimated impact\n- Categorize solutions by:\n  - Quick wins (can ship in 1-2 sprints)\n  - Medium lift (3-4 sprints)\n  - Major initiatives (5+ sprints)\n\n**Deliverable:** Prioritized opportunity list with impact estimates\n\n**Days 2-3: Legal & Compliance Kickoff**\n- Schedule meeting with Legal team to discuss:\n  - Current payment data handling approach and PCI DSS compliance\n  - Any planned changes to data collection, storage, or processing\n  - Payment method additions or changes being considered\n  - Third-party payment processor policies and limitations\n  - User data privacy implications of potential improvements\n  - Required review process and timeline for solutions\n- Document:\n  - Legal approval criteria for payment changes\n  - Compliance requirements for mobile checkout\n  - Red flags and constraints for potential solutions\n  - Legal review timeline and process\n\n**Deliverable:** Legal constraints and approval framework document\n\n**Days 4-5: Solution Prototyping & Validation Planning**\n- Develop 2-3 potential solutions for top pain point(s):\n  - Simplified form design options\n  - Additional payment methods\n  - Improved error messaging and recovery flows\n  - Progress indicators or trust signals\n- Create wireframes or interactive prototypes for testing\n- Plan validation approach:\n  - Which research method (moderated testing, unmoderated testing, A/B test)\n  - Sample size and recruiting strategy\n  - Success metrics to track\n\n**Deliverable:** Solution prototypes and validation plan\n\n**End of Week 3 Deliverable:** Prioritized solutions with legal framework and validation approach\n\n---\n\n### Week 4: Synthesis, Recommendations & Handoff\n\n**Days 1-2: Impact Modeling**\n- For top 3 solutions, estimate:\n  - Potential improvement to completion rate (use research insights to project)\n  - Revenue impact of abandonment reduction\n  - Engineering effort estimate\n  - Legal approval complexity\n  - Risk level\n- Create comparison matrix for executive alignment\n- Identify which solutions need legal review before engineering begins\n\n**Deliverable:** Solution impact and effort matrix\n\n**Days 3-5: Final Deliverables & Presentation**\n- Synthesize all findings into executive summary:\n  - Problem statement with quantified impact (40% abandonment = $X revenue)\n  - Root cause findings from research\n  - Top 3-5 recommended solutions with impact projections\n  - Implementation roadmap (phased approach)\n  - Legal approval requirements and timeline\n  - Resource and engineering estimates\n\n- Create supporting documents:\n  - Detailed findings report with research methodology and quotes\n  - Solution specification documents for top recommendations\n  - Legal compliance checklist for each solution\n  - Technical considerations and constraints\n\n- Present findings to:\n  - Product leadership and stakeholders\n  - Engineering team (get feasibility input)\n  - Legal team (present solutions for review)\n  - Business/Finance team (discuss revenue impact)\n\n**Deliverable:** Executive presentation, detailed findings report, solution specifications, legal checklist\n\n**End of Week 4 Deliverable:** Complete discovery package with recommendations and legal framework for implementation\n\n---\n\n## Key Activities by Timeline\n\n| Week | Quantitative | Qualitative | Strategy | Output |\n|------|------------|-------------|----------|--------|\n| 1 | Funnel analysis, segment breakdown | Session replays, patterns | Problem definition | Abandonment map |\n| 2 | Survey results | User interviews, competitive analysis | Root cause analysis | Interview synthesis |\n| 3 | Impact prioritization | Legal kickoff | Solution exploration | Priorities + legal framework |\n| 4 | Impact modeling | Synthesis, validation planning | Recommendations | Executive deliverables |\n\n---\n\n## Recommended Research Methods\n\n### Quantitative\n- **Analytics funnel analysis** (Days 1-2, Week 1) - Free with existing tools\n- **Session replay** (Days 3-5, Week 1) - Existing or affordable subscription\n- **Post-abandonment survey** (Days 4-5, Week 2) - Quick and scalable\n- **A/B testing** (future, post-discovery) - For solution validation\n\n### Qualitative\n- **User interviews** (Week 2) - 8-12 abandoners = ~6-8 hours of interviews\n- **Competitive analysis** (Week 2) - 5-10 hours for competitors\n- **Moderated usability testing** (future, if needed) - Validate top solutions before engineering\n\n### Stakeholder Engagement\n- **Legal kickoff meeting** (Week 3, Day 2) - 1-hour alignment session\n- **Stakeholder presentation** (Week 4) - Present findings and get buy-in\n\n---\n\n## Legal & Compliance Considerations\n\n### Critical Questions for Legal Review\n\n1. **Current State Assessment**\n   - What payment processor do we use? (Stripe, Square, PayPal, custom?)\n   - Are we currently PCI DSS Level 1 compliant? What's our current audit status?\n   - What data do we currently collect and store on our servers vs. tokenize?\n   - Are there regional compliance requirements (GDPR, CCPA, etc.)?\n\n2. **Potential Changes Requiring Review**\n   - Any changes to which data fields we capture\n   - New payment methods (digital wallets, local payment methods)\n   - Changes to data retention or deletion policies\n   - Use of user data for analytics or fraud detection\n   - Cross-border data flows or payment processing\n\n3. **Review Process**\n   - What's the approval timeline for changes?\n   - Can solutions go through an expedited review process?\n   - Do we need security audit for new integrations?\n   - What documentation must accompany legal submissions?\n\n4. **Quick Wins to Discuss**\n   - UX/design improvements (unlikely to require legal review)\n   - Payment method additions (may require review)\n   - Form field simplification (likely low-risk)\n   - Error messaging improvements (likely low-risk)\n\n### Risk Mitigation Strategy\n\n- **Separate solutions into tracks:**\n  - Low-risk UX improvements (can proceed in parallel with legal review)\n  - Medium-risk feature additions (need legal pre-approval for engineering)\n  - High-risk data/security changes (legal blocks engineering until approved)\n\n- **Early legal engagement:** Kickoff conversation in Week 3 to avoid surprises at launch\n\n---\n\n## Resource & Team Requirements\n\n### Core Team\n- **Product Manager** (you) - 30-40 hours total (discovery leadership)\n- **Design/UX Researcher** - 25-30 hours (user research, prototyping)\n- **Data Analyst** - 15-20 hours (funnel analysis, impact modeling)\n- **Engineering Lead** - 5-10 hours (feasibility input, constraints)\n- **Legal Representative** - 3-5 hours (kickoff, review planning)\n\n### Tools Needed\n- **Analytics platform** (likely already have: GA4, Mixpanel, Amplitude)\n- **Session replay tool** (Hotjar, FullStory, Smartlook - many have free tiers)\n- **User research recruiting** (email lists, survey platform, UserTesting.com, Respondent.io)\n- **Prototyping tool** (Figma - likely already have)\n- **Document collaboration** (Google Docs, Confluence, Notion)\n\n### Budget Estimate\n- User research incentives: $1,000-$2,000 (for 12 interviews)\n- Session replay tool (if new): $0-500/month (many have free tiers)\n- User testing platform (optional): $500-$2,000\n- Total: $1,500-$4,500 (primarily incentives)\n\n---\n\n## Success Criteria & Metrics\n\n### Research Quality\n- **Quantitative:** Clear funnel breakdown with segment analysis\n- **Qualitative:** 8-12 user interviews with identified themes\n- **Competitive:** 3-5 competitive analyses documented\n- **Impact:** Quantified opportunity sizes for top 3 solutions\n\n### Stakeholder Alignment\n- **Legal:** Clear approval framework and risk assessment for solutions\n- **Engineering:** Feasibility assessment and effort estimates\n- **Business:** Revenue impact projections and ROI calculations\n- **Product:** Prioritized roadmap for implementation\n\n### Deliverable Completeness\n- Executive summary with recommendations\n- Detailed findings report with methodology\n- Solution specifications with impact estimates\n- Legal compliance checklist\n- Implementation roadmap with phases\n\n---\n\n## Key Risks & Mitigation\n\n| Risk | Likelihood | Mitigation |\n|------|-----------|-----------|\n| Hard to recruit recent abandoners | Medium | Start recruiting early (Week 1), offer incentives, use email/SMS lists |\n| Legal review becomes bottleneck | Medium | Engage Legal in Week 3 to align on process, separate low-risk from high-risk solutions |\n| Solutions require major engineering work | Medium | Get engineering feasibility input in Week 3, focus on quick wins first |\n| Data gaps in analytics | Low | Audit tracking implementation in Week 1, Days 1-2 |\n| Stakeholder disagreement on priorities | Low | Present quantified impact and user evidence, let data drive decisions |\n\n---\n\n## Next Steps\n\n1. **This week:** Audit your analytics setup and start pulling checkout funnel data\n2. **Next week:** Reach out to Legal to schedule the Week 3 kickoff meeting\n3. **Before Week 1 ends:** Identify which session replay tool you'll use\n4. **Before Week 2 starts:** Create recruitment list of recent abandoners for interviews\n\n---\n\n## Appendix: Sample Research Questions\n\n### User Interview Guide (Week 2)\n- \"Can you describe your experience trying to complete a purchase on mobile?\"\n- \"When you decided to leave without completing the purchase, what was the main reason?\"\n- \"Were there any specific steps in the checkout that felt confusing or difficult?\"\n- \"What would have made you complete the purchase instead of abandoning it?\"\n- \"Have you had better experiences checking out on mobile with other companies?\"\n\n### Post-Abandonment Survey (Week 2)\n- \"Why did you abandon your checkout? (Select all that apply)\" - Multiple choice options\n- \"How would you rate the ease of our checkout process?\" - 1-5 scale\n- \"Which part of checkout was most frustrating?\" - Open-ended\n- \"Would you try completing this purchase again?\" - Yes/No/Maybe\n- \"What would need to improve for you to complete checkout?\" - Open-ended\n\n### Competitive Analysis Checklist (Week 2)\n- [ ] Number of form fields in payment step\n- [ ] Payment method options offered\n- [ ] Progress indicator presence\n- [ ] Error message clarity\n- [ ] Use of trust signals (security badges, guarantees)\n- [ ] Mobile optimization (form input types, keyboard appearance)\n- [ ] Field validation (real-time vs. on-submit)\n- [ ] Mobile form layout (single column vs. multi-column)\n- [ ] Page load time\n- [ ] Technical issues encountered\n\n---\n\n## Conclusion\n\nThis 4-week discovery plan provides a systematic approach to understanding and addressing your 40% payment abandonment rate. By combining quantitative analysis, user research, and early legal engagement, you'll develop evidence-based recommendations that have strong stakeholder buy-in and a clear path to implementation. The emphasis on legal collaboration from the start ensures that solutions can move quickly from discovery to engineering once approved.\n\nThe plan is designed to be executable with your existing tools and team, while maintaining rigor in research methodology. Success depends on starting data collection immediately and maintaining momentum through all four weeks.\n\n**Start with:** Week 1, Day 1 - Pull your checkout funnel data and schedule the legal kickoff meeting for Week 3.\n"}], "grading": {"expectations": [{"text": "The response acknowledges and includes the Legal dependency the user explicitly mentioned", "passed": true, "evidence": "Response includes dedicated 'Legal & Compliance Considerations' section (lines 226-263). Week 3 explicitly schedules 'Legal & Compliance Kickoff' (Days 2-3, lines 121-135) with specific discussion points on PCI DSS, payment processors, and data handling. Legal team included in stakeholder presentation (line 187) and resource requirements. Multiple references to legal approval timelines and risk mitigation strategy for separating low/medium/high-risk solutions."}, {"text": "The response challenges or digs deeper into the problem rather than accepting 'improve checkout' at face value", "passed": true, "evidence": "Response rejects surface-level approaches by requiring systematic problem segmentation in Week 1: breaking down the 40% abandonment by device type, demographics, traffic source, payment method, and identifying specific abandonment points (payment method selection vs. card entry vs. billing address vs. confirmation). Week 1 Sessions replay analysis (lines 50-61) observes actual user behavior rather than assumptions. Interview questions (lines 339-348) dig into root causes: 'When you decided to leave without completing the purchase, what was the main reason?' Rather than proposing generic improvements, the plan first demands precise problem definition."}, {"text": "The response produces or describes a discovery plan structured around the 4-week deadline", "passed": true, "evidence": "Response opens with '## 4-Week Product Discovery Initiative' (line 2) and explicitly states in Executive Summary: 'This 4-week discovery plan will systematically identify root causes' (line 8). Entire response organized as Week 1-4 structure (lines 29-192) with labeled weeks, daily breakdowns, and end-of-week deliverables. Timeline table (lines 197-204) shows progression. Week 4 explicitly titled 'Synthesis, Recommendations & Handoff' connecting discovery to action within the deadline."}, {"text": "The response mentions at least one lean experiment or research approach (e.g. user interviews, prototype test, data analysis)", "passed": true, "evidence": "Response documents multiple lean research approaches: (1) Data analysis - funnel metrics and segment breakdown (lines 33-46); (2) Session replay analysis using Hotjar/FullStory (lines 50-61); (3) User interviews with 8-12 abandoners covering friction points (lines 69-88); (4) Post-abandonment surveys with Likert scales (lines 90-100); (5) Competitive analysis testing 3-5 competitors (lines 95-98); (6) Solution prototyping with wireframes (lines 137-149); (7) A/B testing referenced for validation (lines 212-213). Each approach is named, scoped, and integrated into specific weeks."}, {"text": "The response references working backwards from the deadline to identify milestones or phases", "passed": true, "evidence": "Entire plan structure works backward from 4-week deadline with explicit phasing: Week 1 = problem definition (funnel analysis, session replay); Week 2 = root cause discovery (interviews, surveys); Week 3 = solution discovery & legal planning (prototyping, legal kickoff); Week 4 = synthesis & recommendations (impact modeling, executive handoff). Each week ends with explicit deliverables labeled 'End of Week N Deliverable' (lines 63, 102, 151, 192). Legal kickoff scheduled for Week 3 to avoid blocking Week 4 recommendations. Risk mitigation section (lines 315-321) explicitly addresses timeline constraints driving prioritization."}], "summary": {"passed": 5, "failed": 0, "total": 5, "pass_rate": 1.0}, "execution_metrics": {"total_tokens": 45391, "duration_ms": 53918}, "timing": {"executor_duration_seconds": 53.9, "grader_duration_seconds": 8.5, "total_duration_seconds": 62.4}, "claims": [{"claim": "The plan is executable with your existing tools and team", "type": "quality", "verified": true, "evidence": "Response lists specific, standard tools (GA4/Mixpanel/Amplitude for analytics, Hotjar/FullStory for session replay, UserTesting for recruiting) and includes detailed resource allocation (PM 30-40 hours, UX Researcher 25-30 hours, etc.) and budget estimate ($1,500-$4,500) suggesting feasibility assessment was conducted."}, {"claim": "8-12 user interviews represent sufficient sample size for root cause analysis", "type": "process", "verified": true, "evidence": "Interview count of 8-12 users (line 70) is standard qualitative research practice for exploratory discovery. Response explicitly calls this 'Root cause analysis identifying primary abandonment drivers with evidence from research' (line 102), indicating this sample size is appropriate for the research objective."}, {"claim": "Legal review can be parallelized with product development", "type": "process", "verified": true, "evidence": "Risk mitigation strategy (lines 257-260) explicitly separates solutions into tracks: 'Low-risk UX improvements (can proceed in parallel with legal review)' vs. 'High-risk data/security changes (legal blocks engineering until approved)'. This demonstrates understanding that not all solutions require sequential legal blocking."}], "eval_feedback": {"suggestions": [], "overall": "No suggestions. Assertions are well-designed and appropriately discriminating. Each tests for meaningful outcomes (acknowledging dependencies, strategic depth, structured planning, research rigor, and backward working). All assertions passed with strong evidence. The evaluation comprehensively tests the core requirements from the prompt without gaps or trivial checks."}}}, {"id": "eval-referral-programme-with_skill", "prompt": "I'm kicking off discovery for a new feature \u2014 we want to build a referral programme for our consumer app. The CEO asked for it after seeing a competitor do it. We have about 8 weeks. I need to figure out: is this actually the right thing to build, what shape it should take, and how to test it before we invest in full engineering. I'll need finance involved at some point since it touches our unit economics.", "eval_id": 3, "outputs": [{"name": "response.md", "type": "text", "content": "# Product Discovery Kickoff: Referral Programme Initiative\n## 8-Week Discovery Plan\n\n---\n\n## A Critical Checkpoint: The \"Competitor Did It\" Pattern\n\nBefore we dive into the discovery process, I need to flag something important.\n\nYou've mentioned that the CEO saw a competitor run a referral programme and asked you to build one. This is a **common discovery trap**: solution-first thinking driven by external triggers rather than internal customer problems.\n\nThe risk here:\n- Competitors operate in different business models, customer segments, and unit economics than you do\n- A referral programme that works for them may not work for you \u2014 or worse, may hurt your margins\n- 8 weeks is enough time to validate *whether* this is the right problem, but not enough time to recover if you build the wrong thing\n- Finance involvement later (as you noted) suggests unit economics aren't yet understood\n\n**My recommendation:** We use discovery to flip this around. Instead of starting with \"should we build a referral programme,\" we start with \"what are the real growth / retention problems we're trying to solve, and is a referral programme the right lever?\"\n\nThis means **Phase 1 is critical**. We need to separate signal from noise:\n- What did the CEO actually see that alarmed them? (market share loss? competitor growth rate? customer feedback?)\n- What's our actual growth/retention bottleneck right now?\n- Who are we trying to acquire or keep, and what's blocking them?\n\nOnly then do we ask: \"Is a referral programme the answer?\"\n\n---\n\n## Phase 1: Intake & Problem Framing\n\n### Context You've Already Given Me\n- **Timeline:** 8 weeks\n- **Key stakeholder:** CEO (who suggested direction) + Finance (needed for unit economics)\n- **Apparent goal:** Validate whether to build a referral programme and how\n\n### Clarifying Questions I Need Answered (Please respond to each)\n\n**1. What is the actual growth or retention problem the CEO is worried about?**\n   - Are you losing customers to the competitor?\n   - Is your user acquisition cost rising while theirs stays flat?\n   - Are customers asking for referral mechanics?\n   - Or is this primarily \"we see them doing it, we should too\"?\n\n**2. What does success look like at the end of 8 weeks?**\n   - A validated one-pager saying \"build\" or \"don't build\"?\n   - A prototype to test with users?\n   - A full PRD with unit economics modeled?\n   - A go/no-go decision supported by customer research?\n\n**3. Who else needs to be aligned by the end of discovery?**\n   - Head of Product? Engineering Lead? Marketing? Sales?\n   - Finance (as you mentioned) \u2014 what specific input do they need to provide? (pricing model, unit economics bounds, CAC/LTV targets?)\n\n**4. What's your current customer acquisition and retention picture?**\n   - How do customers find you today? (organic, paid, sales, referral?)\n   - What's your CAC and LTV, roughly?\n   - Are you growth-constrained or margin-constrained?\n   - Are there specific customer segments with different acquisition profiles?\n\n---\n\n## Preliminary Problem Framing (Pending Your Answers)\n\nBased on what you've told me, here's what I'm hypothesizing \u2014 **but this needs validation from you and your team:**\n\n### Hypothesis A (Growth Play)\n**Problem:** \"We have a low-cost customer acquisition channel (referrals) that our competitors are exploiting, but we aren't. Customers are finding them through word-of-mouth and peer recommendations, which we aren't systematically incentivizing. If we don't build a referral programme, we'll lose market share to competitors who do.\"\n\n*Why it might be true:* Competitors with referral programmes often see 25\u201340% higher LTV and can afford higher CAC. If your CAC is rising while theirs stays flat, this could explain why.\n\n*Why it might be wrong:* Your customer base might have different referral patterns (e.g., enterprise buyers refer differently than consumer users). A referral programme optimized for the competitor's model might not work in your economics.\n\n### Hypothesis B (Retention Play)\n**Problem:** \"Existing customers are churning because they don't feel invested in our community. A referral programme (with shared rewards or community mechanics) would increase engagement and reduce churn.\"\n\n*Why it might be true:* Network effects and social proof drive retention in consumer apps.\n\n*Why it might be wrong:* If churn is driven by feature gaps, price, or support, a referral programme won't fix it.\n\n### Hypothesis C (No Real Problem)\n**Problem:** \"There is no pressing acquisition or retention problem; the CEO is responding to competitive pressure, but our unit economics don't support a referral programme investment yet.\"\n\n*Why it might be true:* If you're already growing profitably and churn is low, building a referral programme might dilute margins without clear ROI.\n\n---\n\n## Phase 2: Impact Assessment (Template)\n\nOnce you answer the clarifying questions, here's how we assess whether this matters:\n\n### User Impact\n- **Who's affected?** Existing customers (will they refer?) and prospects (will they sign up via referral?)\n- **Frequency:** How often do customers naturally recommend you to peers?\n- **Severity:** How much does the lack of a structured referral programme hurt their ability to refer?\n- **Cost if unsolved:** Do they churn because they can't invite friends? Do they use competitors' programmes instead?\n\n### Business Impact\n- **Revenue opportunity:** Estimate the revenue from referred customers (based on your current organic/word-of-mouth baseline, or competitor benchmarks)\n- **Efficiency/cost savings:** How much could referral CAC offset against paid acquisition?\n- **Strategic alignment:** Does this map to a top company OKR? (e.g., \"reach 1M users by end of year\")\n- **Risk of NOT solving it:** Will competitors take market share faster? Will you miss a growth lever?\n\n---\n\n## Phase 3: Solution Exploration (Framework)\n\nOnce we've validated the *problem*, we'll use two complementary approaches:\n\n### Approach A: Opportunity Solution Tree\nWe'll map the outcome (e.g., \"increase low-cost customer acquisition\") \u2192 opportunities (e.g., \"make it easy for customers to invite peers,\" \"create incentive for referrers,\" \"create incentive for referred users\") \u2192 multiple solution options per opportunity \u2192 testable assumptions.\n\nThis forces us to separate *why* referrals work (the opportunity) from *how* to structure the programme (the solution). Often, there are multiple solutions to the same opportunity, and the \"obvious\" one (cash incentives) isn't always best.\n\n### Approach B: Lean Experiments\nFor each solution direction, we'll ask: \"What's the smallest test?\" Examples:\n- **Fake door test:** Add a \"Refer a friend\" button to the app, measure click-through rate. If it's high, demand exists. If low, maybe it's not a priority for users.\n- **Wizard of Oz test:** Manually process referrals for a cohort (you handle the rewards manually) to understand unit economics before automating.\n- **Prototype test:** Build a clickable prototype of the referral flow, test with 10\u201320 users, observe friction points.\n- **Email test:** Email existing power users with a referral offer, measure conversion and referral rate.\n\nEach test should answer one critical question and inform the next step.\n\n---\n\n## Phase 4: One-Pager Checkpoint\n\nBy week 3\u20134 of discovery, we'll synthesize findings into a one-pager covering:\n- **Problem:** What growth/retention gap are we solving?\n- **Impact:** How big is the opportunity? What's the revenue upside?\n- **Proposed direction:** Which solution(s) from Phase 3 show the most promise?\n- **The ask:** \"Should we proceed to build?\"\n\nThis becomes the alignment tool for Head of Product, Engineering Lead, and Finance.\n\n---\n\n## Phase 5: Discovery Plan & Dependency Check\n\n### Key Dependencies (Flagged for 8-Week Timeline)\n\nSince referral programmes touch unit economics, pricing, and customer incentives, these teams need involvement:\n\n| Team | Input Needed | When |\n|------|----------|------|\n| **Finance** | CAC/LTV targets, pricing floor for referral rewards, revenue impact model | Week 2\u20133 (Phase 2) + Week 6 (Phase 4 one-pager) |\n| **Engineering** | Data infrastructure (tracking referral source), notification capabilities, reward fulfillment system | Week 3 (Phase 2) + Ongoing |\n| **Customer Success / Support** | Refund/chargeback policy if referral reward is refunded, support playbook for disputes | Week 4 (Phase 3) |\n| **Legal** | Terms of service updates (referral eligibility, reward terms), fraud/abuse prevention | Week 5 (Phase 4) |\n| **Marketing** | Customer segment data, go-to-market playbook for launch | Week 6\u20137 (Phase 5) |\n\n### Proposed 8-Week Timeline\n\n```\nWeek 1:    Clarify problem, validate assumptions with stakeholders (this phase)\nWeek 2\u20133:  Customer research + data analysis (user demand, competitor benchmarks)\nWeek 4\u20135:  Solution exploration (OST workshop, multiple solution options)\nWeek 5\u20136:  Lean experiments (fake door test, prototype, wizard-of-oz cohort)\nWeek 6\u20137:  Synthesis + one-pager + stakeholder readout\nWeek 8:    Discovery buffer & decision gate\n```\n\n**Deliverables by end of 8 weeks:**\n1. Problem statement (validated or pivoted)\n2. Impact summary (opportunity size, unit economics)\n3. Opportunity Solution Tree (opportunities + multiple solutions + assumptions)\n4. Experiment results (what we learned)\n5. One-pager (recommended direction + ask)\n6. Go/no-go decision + next steps (PRD or pivot)\n\n---\n\n## How You Can Help Right Now\n\nTo move into Phase 2, please provide (in writing or a 20-min call):\n\n1. **The CEO's specific concern:** What did they see that triggered this request? (market data, customer feedback, competitive loss, or intuition?)\n2. **Your current growth metrics:** CAC, LTV, growth rate, churn rate, customer acquisition channels (ranked by volume)\n3. **Finance's constraints:** What's the minimum CAC reduction or LTV improvement that would justify build-vs-buy-vs-partner?\n4. **Customer segment view:** Do all customer segments acquire the same way, or are there power users / high-value cohorts with different referral patterns?\n5. **Competitive intelligence:** What exactly does the competitor's programme look like? (reward structure, referral conversion rate if visible, how it's promoted?)\n\n---\n\n## Key Principle: Stay Problem-First\n\nThroughout this discovery, we're going to keep asking: **\"Are we solving the right problem with the right solution for our economics?\"**\n\nIf at any point the data suggests:\n- Referrals aren't a natural behaviour for your customers (low fake-door clicks, low email conversion)\n- The referral reward cost is too high relative to LTV\n- Your real bottleneck is retention, not acquisition\n- A different lever (product improvement, sales, partnerships) moves the needle faster\n\n...then we'll recommend **pivoting away from a referral programme** and toward whatever will actually move growth.\n\nThat's not failure \u2014 that's discovery working as it should.\n\n---\n\n## Next Steps\n\n1. **Respond to the 4 clarifying questions above** (or schedule a 30-min sync with PM, Finance, and Head of Product)\n2. **Pull together current CAC, LTV, and acquisition channel data**\n3. **Brief the CEO:** Explain that discovery will answer \"should we build?\" not just \"how do we build?\" \u2014 this reframes the 8 weeks as a risk-reduction investment\n4. **Notify Finance:** Let them know they'll be engaged in Week 2\u20133 for impact modelling\n\nOnce I have those inputs, we'll kick off Phase 2 formally with customer research, competitive analysis, and unit economics modelling.\n\n---\n\n## Questions?\n\nThis is a checkpoint. If the problem framing above doesn't feel right, or you want to reorient the discovery around a different hypothesis, **now** is the time to adjust. It's much cheaper to course-correct in Week 1 than in Week 4.\n\nLet me know what you find out, and we'll move forward.\n"}], "grading": {"expectations": [{"text": "The response flags the 'competitor did it' / 'CEO asked for it' pattern as a potential anti-pattern or solution-first trap", "passed": true, "evidence": "The response explicitly flags this in the opening section titled 'A Critical Checkpoint: The Competitor Did It Pattern'. It states: 'You've mentioned that the CEO saw a competitor run a referral programme and asked you to build one. This is a common discovery trap: solution-first thinking driven by external triggers rather than internal customer problems.' The response identifies specific risks including different business models, unit economics, and notes that 'Finance involvement later suggests unit economics aren't yet understood.'"}, {"text": "The response identifies Finance as a dependency and includes it in the plan", "passed": true, "evidence": "Finance is explicitly identified as a key stakeholder in Phase 1 ('Finance (needed for unit economics)') and as a dependency in Phase 5. The response includes a detailed dependency table showing Finance input needed: 'CAC/LTV targets, pricing floor for referral rewards, revenue impact model' scheduled for 'Week 2\u20133 (Phase 2) + Week 6 (Phase 4 one-pager)'. Finance is also listed in next steps and in the one-pager alignment meeting."}, {"text": "The response uses or references the Opportunity Solution Tree or continuous discovery framework", "passed": true, "evidence": "The response explicitly references the Opportunity Solution Tree in Phase 3 under 'Approach A: Opportunity Solution Tree'. It describes: 'We'll map the outcome (e.g., increase low-cost customer acquisition) \u2192 opportunities (e.g., make it easy for customers to invite peers, create incentive for referrers, create incentive for referred users) \u2192 multiple solution options per opportunity \u2192 testable assumptions.' The framework is also listed as a deliverable: 'Opportunity Solution Tree (opportunities + multiple solutions + assumptions)'."}, {"text": "The response recommends lean experiments or assumption testing before committing to full engineering", "passed": true, "evidence": "Phase 3 includes 'Approach B: Lean Experiments' which explicitly recommends testing before engineering commitment. Four specific lean experiment examples are provided: fake door test (measure click-through), Wizard of Oz test (manually process referrals to understand unit economics), prototype test (clickable prototype with 10\u201320 users), and email test (measure referral conversion). The timeline shows 'Week 5\u20136: Lean experiments (fake door test, prototype, wizard-of-oz cohort)' before the one-pager and final decision."}, {"text": "The response offers or describes a one-pager to validate understanding with stakeholders", "passed": true, "evidence": "Phase 4 is titled 'One-Pager Checkpoint' and explicitly describes creating one by 'week 3\u20134 of discovery'. The response details what the one-pager covers: 'Problem: What growth/retention gap are we solving?', 'Impact: How big is the opportunity? What's the revenue upside?', 'Proposed direction: Which solution(s) from Phase 3 show the most promise?', and 'The ask: Should we proceed to build?' It states: 'This becomes the alignment tool for Head of Product, Engineering Lead, and Finance.'"}, {"text": "The response describes an 8-week discovery plan structure with phases or milestones", "passed": true, "evidence": "The response provides a detailed 8-week timeline with clear phases and milestones: 'Week 1: Clarify problem, validate assumptions with stakeholders', 'Week 2\u20133: Customer research + data analysis', 'Week 4\u20135: Solution exploration (OST workshop)', 'Week 5\u20136: Lean experiments', 'Week 6\u20137: Synthesis + one-pager + stakeholder readout', 'Week 8: Discovery buffer & decision gate'. Five major phases are labeled (Intake & Problem Framing, Impact Assessment, Solution Exploration, One-Pager Checkpoint, Discovery Plan & Dependency Check) with associated week numbers."}], "summary": {"passed": 6, "failed": 0, "total": 6, "pass_rate": 1.0}, "execution_metrics": {"tool_calls": {}, "total_tool_calls": 3, "files_created": 2, "errors_encountered": 0}, "timing": {"executor_duration_seconds": 55.9, "grader_duration_seconds": null, "total_duration_seconds": 55.9}, "claims": [{"claim": "The response reframes the problem from 'how to build a referral program' to 'should we build one'", "type": "quality", "verified": true, "evidence": "Opening section explicitly states: 'My recommendation: We use discovery to flip this around. Instead of starting with should we build a referral programme, we start with what are the real growth / retention problems we're trying to solve, and is a referral programme the right lever?' This is reinforced in next steps: 'Brief the CEO: Explain that discovery will answer should we build? not just how do we build?'"}, {"claim": "The response presents three distinct hypotheses about the underlying problem", "type": "factual", "verified": true, "evidence": "Under 'Preliminary Problem Framing' the response presents: Hypothesis A (Growth Play), Hypothesis B (Retention Play), and Hypothesis C (No Real Problem). Each includes 'Why it might be true' and 'Why it might be wrong' sections, demonstrating genuine uncertainty rather than assuming the referral program is the right solution."}, {"claim": "The response identifies specific data inputs needed to move forward", "type": "quality", "verified": true, "evidence": "Section 'How You Can Help Right Now' lists five specific categories: The CEO's specific concern, Your current growth metrics (CAC, LTV, growth rate, churn rate, channels), Finance's constraints, Customer segment view, and Competitive intelligence details. Also includes four clarifying questions in Phase 1 about growth problems, success definition, stakeholder alignment, and customer acquisition picture."}, {"claim": "The response includes a multi-team dependency table with timing", "type": "factual", "verified": true, "evidence": "Phase 5 includes a detailed table mapping Finance, Engineering, Customer Success/Support, Legal, and Marketing with their specific inputs needed and timing (Week 2\u20133, Week 3, Week 4, Week 5, Week 6\u20137). This demonstrates systematic integration planning across the organization."}], "user_notes_summary": {"uncertainties": [], "needs_review": [], "workarounds": []}, "eval_feedback": {"suggestions": [{"reason": "All six assertions passed, but they test structural presence rather than substance. The response is strong at framing and process, but the assertions don't verify whether the actual problem diagnosis is sound. Assertions could be strengthened by checking whether the response provides concrete decision criteria for go/no-go, or whether the experiment designs are genuinely testable."}, {"reason": "No assertion specifically checks whether the response addresses risk management or contingency planning if the referral program proves unfeasible. The response does mention 'pivoting away' at the end, but this outcome-agnostic thinking could be tested more directly."}, {"reason": "The response is strong on process but relies heavily on follow-up input from the user before moving to Phase 2. An assertion about whether the response provides sufficient guidance to begin work immediately (if needed) would help evaluate practical utility."}], "overall": "Evals are well-targeted and all assertions pass with clear evidence. The response delivers on the core expectation: a problem-first discovery approach with structured phases, explicit anti-pattern flagging, and lean testing discipline. Quality of assertions could be improved by testing decision-making substance rather than just structural elements."}}}, {"id": "eval-referral-programme-without_skill", "prompt": "I'm kicking off discovery for a new feature \u2014 we want to build a referral programme for our consumer app. The CEO asked for it after seeing a competitor do it. We have about 8 weeks. I need to figure out: is this actually the right thing to build, what shape it should take, and how to test it before we invest in full engineering. I'll need finance involved at some point since it touches our unit economics.", "eval_id": 3, "outputs": [{"name": "response.md", "type": "text", "content": "# Referral Programme Discovery Framework\n\n## Executive Summary\n\nYou're facing a classic \"CEO saw a shiny thing\" scenario\u2014which *can* lead to great products, but only if you validate the assumption that a referral programme is actually the right solution for your business. Your 8-week window is tight but sufficient for rigorous discovery. This framework helps you answer three core questions:\n\n1. **Is this the right problem to solve?** (Market fit, business need, user desire)\n2. **What shape should it take?** (Mechanics, incentives, integration points)\n3. **How do we test before full engineering?** (MVP, measurement, learning goals)\n\n---\n\n## Phase 1: Validate the Opportunity (Weeks 1\u20132)\n\n### 1.1 Understand Why Your CEO Saw Value\n\nStart with first principles, not competitor copying.\n\n**Discovery Activities:**\n- **CEO intent interview**: Ask directly\u2014what problem is the CEO trying to solve? Faster growth? Reduce CAC? Better retention? Competitive differentiation? Get specific about the success metric they have in mind.\n- **Competitor research**: Don't just look at *that they have* a referral programme; understand *how it works*, participation rates (if visible), and positioning. Is it central to their growth story or a nice-to-have? How long has it been live?\n- **Market context**: Has your category seen referral adoption as table stakes? Are users asking for it, or is it an internal/competitive obsession?\n\n**Key Questions to Answer:**\n- What specific growth or engagement gap is this solving?\n- Is referral currently a top reason users *don't* switch to competitors?\n- Would referral meaningfully accelerate your path to profitability or next milestone?\n\n### 1.2 Map Your Current Growth Engine\n\nUnderstand what's working before adding new mechanics.\n\n**Data to Gather:**\n- Current user acquisition funnel: CAC, payback period, LTV, channels\n- Retention cohorts: where do users drop off?\n- Current organic/word-of-mouth contribution: how many users already mention you to friends?\n- Unit economics: gross margin, COGS, operating costs\u2014what's your true LTV?\n- Growth constraints: are you supply-limited (can you onboard more users?) or demand-limited (can't attract them)?\n\n**Why This Matters:** If you're already at 90% of users acquired through referral naturally, a formal programme may cannibalize organic word-of-mouth. If CAC is already cheap ($5) and LTV high ($500), referral upside is limited. If you're ARPU-positive day 1, referral incentives cost more than they earn.\n\n### 1.3 Audit Retention & Activation First\n\nReferral works best when applied to engaged users.\n\n**Quick Assessment:**\n- What % of users are still active 30 days post-signup?\n- What % reach your core activation moment (first purchase, first post, first match, etc.)?\n- Among activated users, how many have referred someone without incentive?\n- What's your NPS or willingness-to-recommend score?\n\n**Red Flag:** If <40% of users activate and retention is <30% D30, a referral programme won't solve the underlying product-market fit gap. You'll incentivize low-quality referrals (friends of non-engaged users) and see poor conversion.\n\n---\n\n## Phase 2: User & Market Validation (Weeks 2\u20134)\n\n### 2.1 Talk to Users: Referral Desire vs. Referral Friction\n\nConduct 15\u201320 user interviews: mix of active users, churned users, and recent sign-ups.\n\n**Research Prompts:**\n1. \"How did you first hear about us?\" Listen for spontaneous referrals. How many were influenced by a friend's explicit recommendation?\n2. \"Would you be more likely to invite friends if we gave you [incentive type: credit, discount, cash]?\" Test genuine interest.\n3. \"What's stopping you from telling friends about us today?\" Uncover friction\u2014is it product quality, not thinking about it, or social awkwardness?\n4. \"If we made it easier to share, would you?\" (Probe without incentive first\u2014then with.)\n5. For referred users: \"How much did the [referrer's] recommendation matter vs. the incentive?\"\n\n**What to Learn:**\n- Is there genuine desire to refer (organic pull), or will you have to create it (push)?\n- Which incentive types resonate? (discount/credit, social status/badge, cash rebate, karma-based)\n- How many of your non-referrers would become referrers *if incentivized*?\n- What's the actual conversion rate of referred friends? (Talk to referrers about their networks\u2014are they warm, high-intent intros?)\n\n### 2.2 Competitive Benchmarking\n\nLook beyond surface mechanics.\n\n**For Each Relevant Competitor:**\n- How is referral positioned? (core growth lever vs. bonus feature)\n- Mechanics: what do you get (referrer) / refer-ee get? Caps? Friction?\n- Participation: any visible signals of adoption? (reviews, app store comments, social mentions)\n- CAC impact: has their referral publicly moved the needle, or is it a rounding error?\n- Integration: how seamless is it? (in-app button, email, social share, SMS, custom link)\n\n**Critical Insight:** Most consumer referral programmes plateau at 5\u201315% participation. Don't assume the competitor is seeing 50% of growth from referral.\n\n### 2.3 Finance: Unit Economics Deep Dive\n\nThis is non-negotiable before design. Bring finance in now.\n\n**Questions for Your Finance Team:**\n1. **Current unit economics**: What's LTV in month 0, 1, 3, 6, 12? Gross margin per user? CAC by channel?\n2. **Referral incentive cost**: If we offer $10 credit to referrer + $10 to refer-ee, how many referrals break even? (Example: if LTV is $80, we can afford $20 incentive if 1 in 3 referred users stick.)\n3. **Cohort quality**: Do referred users have different LTV than organic users? Better retention? Higher spend?\n4. **Payback period**: If CAC today is $30, can we afford a programme that lowers it to $20?\n5. **Unit economics ceiling**: What's the max we'd spend to acquire via referral?\n\n**Model This:** Build a simple spreadsheet:\n```\nReferral Rate: X% of active users invite friends\nConversion Rate: Y% of invited friends sign up\nIncentive Cost per Referral: $Z (referrer + refer-ee)\nReferred User LTV: $L\nPayback Threshold: Does $Z fit in the LTV budget?\n```\n\nIf the math doesn't work, referral is a growth hack in name only\u2014it'll be unprofitable.\n\n---\n\n## Phase 3: Design the Opportunity (Weeks 3\u20135)\n\n### 3.1 Define Success Metrics & Learning Goals\n\nBefore you design mechanics, decide what victory looks like.\n\n**Primary Metric (Pick One):**\n- **Growth**: Referral will contribute X% of new signups by month 6\n- **CAC Reduction**: Referral CAC will be $Y, reducing blended CAC by Z%\n- **Engagement**: Referral participation will drive retention/NPS improvement\n- **Unit Economics**: Referral will improve LTV by X% or payback period by Y months\n\n**Secondary Metrics:**\n- Referral participation rate (% of users who invite)\n- Referral conversion rate (% of invites that convert to signup)\n- Referred user retention (compare to organic cohorts)\n- Incentive spend per acquisition\n- NPS/satisfaction among referrers vs. non-referrers\n\n**Learning Goals for Discovery Phase:**\n1. Can we get 5%+ of users to refer (willingness)?\n2. Will 20%+ of referred invites convert (viability)?\n3. Will referred users have 90%+ of organic user LTV (quality)?\n4. Is the unit economics sustainable (finance sign-off)?\n\nIf you can't affirm all four by week 5, either iterate the mechanics or pause the feature.\n\n### 3.2 Map Referral Mechanics Options\n\nThere's no one right model. Here are the main buckets:\n\n**A. Incentive Structure**\n\n1. **One-sided (only referrer benefits)**\n   - Pros: Lower cost, harder to abuse, simpler communication\n   - Cons: Less compelling, lower participation\n   - Use case: You're not sensitive to CAC, want to boost engagement for engaged users\n   - Example: $5 referrer credit (refer-ee gets nothing)\n\n2. **Two-sided (both benefit)**\n   - Pros: Higher participation, clearer value prop, better conversion\n   - Cons: Higher cost, more abuse risk, requires quality control\n   - Use case: Competitive market, growth is priority, LTV supports it\n   - Example: Referrer gets $10 credit, refer-ee gets $10 off first purchase\n\n3. **Tiered/Viral Loop (incentives scale with volume)**\n   - Pros: Incentivizes power users, potential for network effects\n   - Cons: Complex, high variance, hard to control cost\n   - Use case: Very high LTV product, strong engagement base\n   - Example: First 3 referrals = $5 each; 4\u201310 = $10 each; 10+ = $15 each\n\n4. **Status/Gamified (non-monetary)**\n   - Pros: Lower cost, builds community, differentiates you\n   - Cons: Lower participation, requires strong brand community\n   - Use case: Young users, social app, brand cult following\n   - Example: Referral badges, leaderboard, exclusive perks (early access to features)\n\n5. **Hybrid**\n   - Example: $5 referrer credit + exclusive badge + leaderboard placement\n\n**B. Share Mechanics (How do users refer?)**\n\n1. **In-app link + built-in copy**\n   - Friction: Low\n   - Tracking: Easy\n   - Abuse risk: Medium\n   - Example: \"Copy link\" button, unique tracking code\n\n2. **SMS/Email templates**\n   - Friction: Low\u2013Medium\n   - Tracking: Easy\n   - Abuse risk: Low\n   - Example: Pre-populated SMS users can customize and send\n\n3. **Social share (Facebook, Twitter, Instagram)**\n   - Friction: Very low for engaged users\n   - Tracking: Medium (rely on platform params)\n   - Abuse risk: High (public, low intent)\n   - Example: \"Share on Instagram\" button\n\n4. **Direct referral (contacts picker)**\n   - Friction: Medium\n   - Tracking: Hard (out of app)\n   - Abuse risk: Low\n   - Example: \"Invite friends\" \u2192 select from contacts \u2192 auto-SMS/email\n\n5. **Custom invite email**\n   - Friction: Medium\u2013High\n   - Tracking: Easy\n   - Abuse risk: Low\n   - Example: User types friend name/email, system sends invite on their behalf\n\n**C. Eligibility & Caps**\n\n- Who can refer? (all users or only activated?)\n- Who can be referred? (new users only? existing users ok? multiple referrals from one person?)\n- Incentive caps? (max 10 referrals per user per month? max $100 earned?)\n- Cooldown? (Can they refer same person twice? What's the window?)\n\n**D. Integration Points**\n\n- Where do users *see* the referral programme? (onboarding, post-signup nudge, settings, dashboard, in-product moment)\n- When do they *access* it? (voluntary, invited by nudge, incentivized moment)\n- Mobile-first or web-first? (Critical for a consumer app\u2014most referrals happen via mobile)\n\n### 3.3 Map Constraints & Assumptions\n\n**Technical:**\n- Can your backend track referral codes/links reliably?\n- Can you gate incentives (only apply credit if referred user meets condition)?\n- Deep linking support on iOS/Android?\n- Fraud detection capability (detect bot referrals, same-household, etc.)?\n\n**Product:**\n- Does this fit your existing onboarding flow, or does it require redesign?\n- Does your core product create natural share moments, or is sharing awkward?\n- Will adding a referral feature dilute focus from product core?\n\n**Legal/Compliance:**\n- Tax implications of incentives (are referral credits taxable?)\n- FTC disclosure requirements (must disclose incentives in shares)\n- Country-specific restrictions (some jurisdictions cap referral incentives)\n- Terms of service updates needed?\n\n**Brand:**\n- Does referral align with your positioning? (cheap/discount-focused programs may cheapen premium brands)\n- Risk of spam: will users abuse referral to spam networks?\n\n---\n\n## Phase 4: Design & Test the MVP (Weeks 5\u20138)\n\n### 4.1 Define the MVP\n\nDon't build the full programme. Design a narrowly scoped test.\n\n**MVP Scope (Example):**\n- Audience: Existing users with 20+ days tenure and 5+ in-app sessions (high-intent, engaged)\n- Mechanic: One-sided referral ($5 credit to referrer only)\n- Share method: In-app unique link + copy-to-clipboard\n- Incentive gate: Refer-ee must sign up + activate (e.g., complete profile)\n- Duration: 4-week test period\n- Success criterion: 3%+ participation rate, 15%+ conversion on invites, payback period <60 days\n\n**Why narrow?**\n- Easier to build and ship fast (weeks 5\u20136)\n- Easier to measure (fewer variables)\n- Easier to troubleshoot if it flops\n- Can iterate the mechanics based on learnings\n\n### 4.2 Create a Measurement Plan\n\nBefore you ship, define what you're measuring and how.\n\n**Core Metrics Dashboard:**\n1. Referral Participation: % of eligible users who generate a referral link\n2. Share Rate: % of users with link who actually share it\n3. Invite Volume: Total number of invites sent\n4. Click Rate: % of invites where recipient clicks the link\n5. Signup Rate: % of clicked links that convert to signup\n6. Activation Rate: % of referral signups that reach core activation moment\n7. Referred User Retention: Day 7, Day 30 cohort retention vs. organic baseline\n8. Incentive Cost per Acquisition: Total incentive spend / referred signups\n9. Referrer Satisfaction: Do referrers feel positive about the programme? (simple survey)\n10. Quality: Are referred users similar to organic users (LTV, behavior)?\n\n**Tracking Setup:**\n- Tag all referred signups with referral source + specific referrer ID\n- Track the referral link click \u2192 signup \u2192 activation journey\n- Compare referred cohorts to organic cohorts on retention, spend, engagement\n\n**Expected Ranges (From Industry Benchmarks):**\n- Participation rate: 2\u20138% (depending on audience maturity)\n- Conversion on invites: 5\u201325% (cold invites perform worse than warm)\n- Referred LTV as % of organic: 85\u2013110% (referred users often similar or slightly better)\n- Payback period: 30\u201390 days (depending on incentive cost vs. LTV)\n\n### 4.3 Plan User Testing (Before Full Ship)\n\nBefore Monday, test with 20\u201330 power users.\n\n**Test Objectives:**\n1. Can they find the referral button?\n2. Is the value prop clear? (Would they actually refer?)\n3. Is share friction acceptable?\n4. Are there obvious bugs or UX issues?\n\n**Testing Method:**\n- In-app banner or email: \"Help us test a new referral feature\" (recruit 20\u201330 high-engagement users)\n- Send them the link/prototype, observe for 3 days\n- Quick survey: \"How likely would you use this?\" (1\u201310), \"What made it easy/hard?\"\n- Iterate based on feedback\n\n**Kill Criteria:** If <30% say they'd use it, pause and re-examine mechanics.\n\n### 4.4 Phased Rollout Plan\n\nWeek 6\u20137: **Soft Launch**\n- Release to 10% of eligible users (or 1,000 users, whichever is bigger)\n- Monitor for bugs, fraud, extreme outliers\n- Gather initial metrics\n- Be ready to kill if participation is <1% or payback period >180 days\n\nWeek 7\u20138: **Full Launch (If Validated)**\n- Roll out to all eligible users\n- Run ads or send email campaign to drive awareness\n- Monitor daily metrics\n- Prepare findings/recommendation for leadership\n\n**Abort Criteria:**\n- Payback period >120 days (unit economics unsustainable)\n- Participation <1% (users don't want to refer)\n- Referred user activation <15% (low-quality referrals)\n- Fraud >10% of referrals (spam/abuse)\n\n---\n\n## Phase 5: Synthesize Findings & Recommend (Week 8)\n\n### 5.1 Create Your Discovery Memo\n\nStructure a recommendation memo for your CEO and finance stakeholders:\n\n**Format:**\n\n```\nREFERRAL PROGRAMME DISCOVERY: RECOMMENDATION\n\n1. OPPORTUNITY SUMMARY\n   - What we learned about the addressable opportunity\n   - Does referral actually solve the growth/retention/engagement problem?\n   - How big is the upside? (e.g., \"Could contribute 15% of growth by M6\")\n\n2. USER VALIDATION\n   - Did users want referral? (participation, survey data)\n   - Which incentive resonated? Which mechanics?\n   - Any patterns in who refers vs. who doesn't?\n\n3. UNIT ECONOMICS\n   - Cost per referral acquisition: $X\n   - Referred user LTV: $Y\n   - Payback period: Z days\n   - ROI at scale (finance model)\n   - Comparison to other growth channels\n\n4. MVP RESULTS (If Tested)\n   - Participation rate, conversion rate, retention\n   - Did it meet learning goals?\n   - Any surprises or red flags?\n\n5. RECOMMENDED NEXT STEPS\n   Option A: \"Green light for full build. Here's the 12-week roadmap.\"\n   Option B: \"Iterate mechanic X and re-test in 4 weeks.\"\n   Option C: \"Pause. Focus on [activation/retention] first, then revisit.\"\n   Option D: \"Kill. Here's why referral isn't the lever.\"\n\n6. RESOURCE ESTIMATE (If Proceeding)\n   - Engineering effort: X weeks\n   - Design effort: Y weeks\n   - Launch risks & mitigations\n```\n\n### 5.2 Be Ready for the Conversation\n\n**Likely CEO questions:**\n- \"But our competitor is doing this\u2014why shouldn't we?\"\n  - *Answer:* \"They may have different unit economics. Here's why referral may/may not work for us...\"\n- \"Can't we just build it and see?\"\n  - *Answer:* \"We could, but $X engineering cost + potential for low ROI. Our test showed...\"\n- \"How soon can we launch?\"\n  - *Answer:* \"If we proceed, 12 weeks to full feature. But let's make sure it's the right priority.\"\n\n**If the data says \"no\":**\nReframe it as \"We discovered the real growth lever is [retention / activation / better product]. Let's hit that first.\"\n\n---\n\n## Key Risks & Mitigations\n\n| Risk | Mitigation |\n|------|-----------|\n| Referral programme launches, has low participation, drains resources | Soft launch to 10%, kill criteria built in, weekly metrics review |\n| Unit economics are bad; incentive cost > referred LTV | Finance model *before* design, test with real cohorts, payback threshold defined upfront |\n| Users spam/abuse referral, damage trust | Fraud detection, limit referrals per user, only eligible users can refer |\n| Referral cannibalizes organic word-of-mouth | Track cohort-level impact, compare referred vs. organic retention, adjust incentive if cannibalizing |\n| Competitor's programme is more popular, creates FOMO | Educate CEO on their unit economics if visible; focus on quality referrals, not volume |\n| Product isn't good enough for word-of-mouth to work | Activation/retention testing shows this early\u2014referral can't fix a broken core product |\n\n---\n\n## Timeline Summary\n\n- **Week 1\u20132**: Validate opportunity (CEO intent, competitor intel, finance models)\n- **Week 2\u20134**: User research (15\u201320 interviews, mechanics testing, retention audit)\n- **Week 4\u20135**: Design MVP (finalize mechanics, success criteria, measurement plan)\n- **Week 5\u20136**: Build & test MVP (20\u201330 power users, iterate UX)\n- **Week 6\u20137**: Soft launch (10% rollout, daily monitoring)\n- **Week 7\u20138**: Full launch or pivot (final metrics, executive recommendation)\n\n---\n\n## Questions to Answer This Week (Starting Points)\n\n1. **Competitive**: Is referral a *core* growth driver for your competitor, or a nice-to-have? (Talk to their users if possible.)\n2. **Finance**: What's today's LTV by cohort? CAC by channel? Can finance model the breakeven cost per referral?\n3. **Product**: What's your Day 7 and Day 30 retention? What % of signups activate?\n4. **CEO**: Specifically, what problem is referral solving? Growth? Retention? Differentiation?\n\nAnswer these, and you'll have clarity on whether referral is a 12-week engineering priority or a false start.\n\n---\n\n## Appendix: Referral Mechanics Scorecard\n\nUse this to compare options as you iterate:\n\n| Factor | One-Sided | Two-Sided | Tiered | Gamified |\n|--------|-----------|-----------|--------|----------|\n| Participation Potential | 3/5 | 4/5 | 4/5 | 3/5 |\n| Engineering Complexity | 2/5 | 3/5 | 4/5 | 3/5 |\n| Cost Risk | 2/5 | 4/5 | 5/5 | 1/5 |\n| Unit Economics Viability | 4/5 | 3/5 | 2/5 | 4/5 |\n| Brand Fit (Consumer App) | 3/5 | 4/5 | 3/5 | 4/5 |\n\n(Rate each 1\u20135 based on your specific context.)\n\n---\n\n## Recommended Reading / Benchmarks\n\n- **Dropbox referral case study**: Their programme contributed 35% of signups at peak (but they had extremely high LTV and product-market fit first).\n- **Uber/Lyft referral mechanics**: Two-sided, high participation, high fraud risk (study their fraud controls).\n- **Slack referral**: Gamified with status, simple mechanics, focused on engaged users.\n- **Unit Economics**: \"Build for How People Actually Use Your Product\" (Andreessen Horowitz) \u2013 emphasizes testing with real users early.\n\n---\n\n**You're in a great position.** You have 8 weeks to validate a big decision. Use this framework to turn CEO intuition into data-driven conviction. And remember: the best outcome isn't always building the feature. It's building the *right* feature at the *right* time.\n\nGood luck.\n"}], "grading": {"expectations": [{"text": "The response flags the 'competitor did it' / 'CEO asked for it' pattern as a potential anti-pattern or solution-first trap", "passed": true, "evidence": "Response opens with: 'You're facing a classic \"CEO saw a shiny thing\" scenario\u2014which *can* lead to great products, but only if you validate the assumption that a referral programme is actually the right solution.' Section 1.1 directs: 'Start with first principles, not competitor copying.' The entire Phase 1 framing treats this as a validation problem requiring discovery before commitment."}, {"text": "The response identifies Finance as a dependency and includes it in the plan", "passed": true, "evidence": "Section 2.3 titled 'Finance: Unit Economics Deep Dive' opens with 'This is non-negotiable before design. Bring finance in now.' Includes specific questions for finance teams, a model template, and positions finance review as a gating requirement in Phase 2 (Weeks 2\u20134). Also referenced in the timeline summary."}, {"text": "The response uses or references the Opportunity Solution Tree or continuous discovery framework", "passed": false, "evidence": "The response does not explicitly name or reference the Opportunity Solution Tree, continuous discovery, discovery interviews, or any named discovery framework. While the methodology aligns with discovery-first principles (validating opportunity before designing solution), it lacks explicit framework attribution or naming."}, {"text": "The response recommends lean experiments or assumption testing before committing to full engineering", "passed": true, "evidence": "Section 4 titled 'Design & Test the MVP (Weeks 5\u20138)' explicitly states 'Don't build the full programme. Design a narrowly scoped test.' Includes 4-week soft launch to 10% of users with defined kill criteria ('participation <1% or payback period >180 days'). Section 3.1 defines 'Learning Goals for Discovery Phase' (4 specific gates) that must be affirmed before proceeding. This is lean experimentation with assumption testing gates."}, {"text": "The response offers or describes a one-pager to validate understanding with stakeholders", "passed": true, "evidence": "Section 5.1 titled 'Create Your Discovery Memo' provides a structured template with 6 sections: (1) Opportunity Summary, (2) User Validation, (3) Unit Economics, (4) MVP Results, (5) Recommended Next Steps, (6) Resource Estimate. This memo explicitly serves as a stakeholder-facing validation document to synthesize findings and guide decisions."}, {"text": "The response describes an 8-week discovery plan structure with phases or milestones", "passed": true, "evidence": "Response explicitly structures discovery into 5 phases with week-by-week timeline: Phase 1 (Weeks 1\u20132), Phase 2 (Weeks 2\u20134), Phase 3 (Weeks 3\u20135), Phase 4 (Weeks 5\u20138), Phase 5 (Week 8). Each phase has specific activities and milestones. Timeline Summary section reiterates the structure. Plan directly addresses the user's stated '8 weeks' constraint."}], "summary": {"passed": 5, "failed": 1, "total": 6, "pass_rate": 0.833}, "execution_metrics": {"tool_calls": {}, "total_tool_calls": 0, "files_created": ["response.md"], "errors_encountered": 0}, "timing": {"executor_duration_seconds": 76.5, "grader_duration_seconds": null, "total_duration_seconds": 76.5}, "claims": [{"claim": "Referral programme success requires unit economics validation before design", "type": "process", "verified": true, "evidence": "Section 2.3 and Phase structure gate design on finance review. Section 3.1 learning goals explicitly include 'Is the unit economics sustainable (finance sign-off)?'"}, {"claim": "Soft launch at 10% with kill criteria prevents wasted engineering on low-ROI features", "type": "process", "verified": true, "evidence": "Section 4.4 defines soft launch to 10% with abort criteria including 'Payback period >120 days' and 'Participation <1%'. This is standard lean validation."}, {"claim": "Referral participation typically plateaus at 5\u201315% across consumer apps", "type": "factual", "verified": true, "evidence": "Section 2.2 states 'Most consumer referral programmes plateau at 5\u201315% participation.' This is presented as an industry benchmark."}, {"claim": "Framework explicitly references established discovery methodologies (OST, continuous discovery)", "type": "process", "verified": false, "evidence": "No explicit mentions of 'Opportunity Solution Tree,' 'continuous discovery,' 'jobs to be done,' or other named frameworks found in response. Framework infers discovery-first principles but does not attribute them."}], "user_notes_summary": {"uncertainties": [], "needs_review": [], "workarounds": []}, "eval_feedback": {"suggestions": [{"assertion": "The response uses or references the Opportunity Solution Tree or continuous discovery framework", "reason": "This assertion is hard to satisfy unless the response explicitly names the framework. The response *does* follow discovery-first methodology and validation gates aligned with continuous discovery principles, but does not cite frameworks by name. Consider whether the intent is to check for framework *naming* (currently failing) or *methodology alignment* (currently passing). If the latter, the assertion should be reworded to: 'The response structures discovery in phases with assumption validation gates' which it clearly does."}, {"assertion": null, "reason": "No assertion covers whether the response appropriately scopes the MVP design or validates the 8-week timeline is realistic. The response defines a detailed MVP scope but doesn't validate whether this can ship in weeks 5\u20136 given typical engineering velocity. Worth checking if this is a meaningful gap."}], "overall": "5 of 6 assertions pass. The failing assertion hinges on explicit framework attribution rather than methodology quality. The response demonstrates strong discovery-first thinking with validated gates, lean experiment design, and stakeholder alignment structures. The core outcome \u2014 a rigorous 8-week discovery plan \u2014 is well-executed."}}}], "previous_feedback": {}, "previous_outputs": {}, "benchmark": {"metadata": {"skill_name": "product-discovery-coach", "skill_path": "/sessions/gracious-gifted-cori/product-discovery-coach", "executor_model": "claude-sonnet-4-6", "analyzer_model": "claude-sonnet-4-6", "timestamp": "2026-03-18T00:00:00Z", "evals_run": ["trial-conversion", "checkout-abandonment", "referral-programme"], "runs_per_configuration": 1}, "runs": [{"eval_id": 1, "eval_name": "trial-conversion", "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 6, "failed": 0, "total": 6, "time_seconds": 88.3, "tokens": 52895, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "The response asks or explicitly surfaces clarifying questions", "passed": true, "evidence": "Step 1a poses three clarifying questions with sub-questions."}, {"text": "References the 5 Whys framework", "passed": true, "evidence": "Step 1b titled 'Define the Problem (5 Whys)' with full worked example."}, {"text": "Does not jump straight to solutions", "passed": true, "evidence": "40% of content dedicated to framing before solutions."}, {"text": "References OST or continuous discovery frameworks", "passed": true, "evidence": "Phase 3 explicitly introduces 'Framework A: Opportunity Solution Tree (OST)'."}, {"text": "Mentions one-pager as checkpoint", "passed": true, "evidence": "Phase 4 entirely dedicated to one-pager stakeholder checkpoint."}, {"text": "Discovery plan with 6-week milestones", "passed": true, "evidence": "Phase 5 provides detailed 6-week structure with milestone markers."}], "notes": []}, {"eval_id": 1, "eval_name": "trial-conversion", "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.33, "passed": 2, "failed": 4, "total": 6, "time_seconds": 38.2, "tokens": 43429, "tool_calls": 2, "errors": 0}, "expectations": [{"text": "The response asks or explicitly surfaces clarifying questions", "passed": false, "evidence": "Immediately launches into a prescriptive plan without asking clarifying questions."}, {"text": "References the 5 Whys framework", "passed": false, "evidence": "No mention of 5 Whys anywhere in the response."}, {"text": "Does not jump straight to solutions", "passed": true, "evidence": "Phases 1-3 focus on analysis before recommendations."}, {"text": "References OST or continuous discovery frameworks", "passed": false, "evidence": "No explicit framework names \u2014 aligns with principles but doesn't name them."}, {"text": "Mentions one-pager as checkpoint", "passed": false, "evidence": "No one-pager mentioned. Deliverables are waterfall chart, cohort analysis, findings deck."}, {"text": "Discovery plan with 6-week milestones", "passed": true, "evidence": "Clear 4-phase plan with week-by-week breakdown across 6 weeks."}], "notes": ["Response is prescriptive and solution-focused rather than coaching/questioning-first."]}, {"eval_id": 2, "eval_name": "checkout-abandonment", "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 5, "failed": 0, "total": 5, "time_seconds": 65.8, "tokens": 49667, "tool_calls": 5, "errors": 0}, "expectations": [{"text": "Acknowledges the Legal dependency", "passed": true, "evidence": "Legal flagged as 'BLOCKING' critical dependency with checkpoints in Weeks 1, 2-3, and 4."}, {"text": "Challenges the problem rather than accepting it at face value", "passed": true, "evidence": "Questions whether abandonment is payment-specific, identifies 5 testable hypotheses."}, {"text": "Discovery plan structured around 4-week deadline", "passed": true, "evidence": "Four distinct phases with weekly milestones and deliverables within 4 weeks."}, {"text": "Mentions lean experiment or research approach", "passed": true, "evidence": "Session recordings, user interviews, analytics deep-dive, A/B testing, wizard-of-oz validation."}, {"text": "References working backwards from deadline", "passed": true, "evidence": "Plan structured toward deadline with forward dependencies explicitly noted."}], "notes": []}, {"eval_id": 2, "eval_name": "checkout-abandonment", "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 5, "failed": 0, "total": 5, "time_seconds": 53.9, "tokens": 45391, "tool_calls": 4, "errors": 0}, "expectations": [{"text": "Acknowledges the Legal dependency", "passed": true, "evidence": "Legal integrated throughout plan with dedicated section, Week 3 kickoff, risk mitigation."}, {"text": "Challenges the problem rather than accepting it at face value", "passed": true, "evidence": "Plan demands systematic segmentation by user type, device, traffic source, exact abandonment point."}, {"text": "Discovery plan structured around 4-week deadline", "passed": true, "evidence": "Entire plan organized with week-by-week phases and daily breakdowns."}, {"text": "Mentions lean experiment or research approach", "passed": true, "evidence": "Data analysis, session replay, user interviews, surveys, competitive analysis, prototyping, A/B testing."}, {"text": "References working backwards from deadline", "passed": true, "evidence": "Phasing structure explicitly tied to 4-week constraint."}], "notes": ["Without-skill performs equally well on this eval \u2014 Legal was explicitly mentioned by user, making it easy for both versions to satisfy."]}, {"eval_id": 3, "eval_name": "referral-programme", "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 6, "failed": 0, "total": 6, "time_seconds": 55.9, "tokens": 48671, "tool_calls": 6, "errors": 0}, "expectations": [{"text": "Flags the competitor/CEO anti-pattern", "passed": true, "evidence": "Opening section explicitly identifies 'competitor did it' as a solution-first trap."}, {"text": "Identifies Finance as dependency", "passed": true, "evidence": "Finance flagged as key stakeholder with specific inputs scheduled Weeks 2-3 and 6."}, {"text": "References OST or continuous discovery framework", "passed": true, "evidence": "Phase 3 explicitly describes OST framework showing outcomes \u2192 opportunities \u2192 solutions \u2192 assumptions."}, {"text": "Recommends lean experiments before engineering", "passed": true, "evidence": "Four specific experiment types described (fake door, Wizard of Oz, prototype, email tests) for Weeks 5-6."}, {"text": "Offers one-pager for stakeholder validation", "passed": true, "evidence": "Phase 4 outlines one-pager checkpoint for weeks 3-4."}, {"text": "8-week discovery plan with phases", "passed": true, "evidence": "Timeline broken into six phases from Week 1 through Week 8."}], "notes": []}, {"eval_id": 3, "eval_name": "referral-programme", "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.83, "passed": 5, "failed": 1, "total": 6, "time_seconds": 76.5, "tokens": 47245, "tool_calls": 4, "errors": 0}, "expectations": [{"text": "Flags the competitor/CEO anti-pattern", "passed": true, "evidence": "Explicitly calls out 'CEO saw a shiny thing' as a potential trap."}, {"text": "Identifies Finance as dependency", "passed": true, "evidence": "Finance section with specific modeling questions and gate in Phase 2."}, {"text": "References OST or continuous discovery framework", "passed": false, "evidence": "Framework principles present but OST or continuous discovery not named explicitly."}, {"text": "Recommends lean experiments before engineering", "passed": true, "evidence": "MVP test with soft launch, kill criteria, and learning goals described."}, {"text": "Offers one-pager for stakeholder validation", "passed": true, "evidence": "Discovery Memo template with 6 sections for synthesising findings."}, {"text": "8-week discovery plan with phases", "passed": true, "evidence": "Clear 5-phase plan mapped to 8-week timeline."}], "notes": ["Without-skill performs strongly on this eval \u2014 competitor anti-pattern flagging is something Claude does naturally."]}], "run_summary": {"with_skill": {"pass_rate": {"mean": 0.94, "stddev": 0.03, "min": 1.0, "max": 1.0}, "time_seconds": {"mean": 70.0, "stddev": 16.5, "min": 55.9, "max": 88.3}, "tokens": {"mean": 50411, "stddev": 2125, "min": 48671, "max": 52895}}, "without_skill": {"pass_rate": {"mean": 0.72, "stddev": 0.31, "min": 0.33, "max": 1.0}, "time_seconds": {"mean": 56.2, "stddev": 16.2, "min": 38.2, "max": 76.5}, "tokens": {"mean": 45355, "stddev": 1935, "min": 43429, "max": 47245}}, "delta": {"pass_rate": "+0.22", "time_seconds": "+13.8", "tokens": "+5056"}}, "notes": ["Largest skill benefit seen on Eval 1 (trial-conversion): with_skill 100% vs without_skill 33%. The skill enforces clarifying-questions-first, 5 Whys, and one-pager checkpoint \u2014 all absent from the baseline.", "Eval 2 (checkout-abandonment) shows no differentiation (both 100%). Legal was explicitly mentioned by the user, making it trivially easy. The checkout eval needs a harder variant where the user does NOT name the dependency.", "Eval 3 (referral-programme) shows modest differentiation (100% vs 83%). The one missing assertion in the baseline was framework naming (OST/continuous discovery) \u2014 the baseline follows the spirit but not the vocabulary.", "The skill adds ~14s average execution time and ~5k tokens. Worth it given the quality lift on Eval 1.", "Assertion 'References OST or continuous discovery framework' may be too name-dependent \u2014 consider checking for the underlying methodology rather than exact terminology."]}};
+
+    // ---- State ----
+    let feedbackMap = {};  // run_id -> feedback text
+    let currentIndex = 0;
+    let visitedRuns = new Set();
+
+    // ---- Init ----
+    async function init() {
+      // Load saved feedback from server — but only if this isn't a fresh
+      // iteration (indicated by previous_feedback being present). When
+      // previous feedback exists, the feedback.json on disk is stale from
+      // the prior iteration and should not pre-fill the textareas.
+      const hasPrevious = Object.keys(EMBEDDED_DATA.previous_feedback || {}).length > 0
+        || Object.keys(EMBEDDED_DATA.previous_outputs || {}).length > 0;
+      if (!hasPrevious) {
+        try {
+          const resp = await fetch("/api/feedback");
+          const data = await resp.json();
+          if (data.reviews) {
+            for (const r of data.reviews) feedbackMap[r.run_id] = r.feedback;
+          }
+        } catch { /* first run, no feedback yet */ }
+      }
+
+      document.getElementById("skill-name").textContent = EMBEDDED_DATA.skill_name;
+      showRun(0);
+
+      // Wire up feedback auto-save
+      const textarea = document.getElementById("feedback");
+      let saveTimeout = null;
+      textarea.addEventListener("input", () => {
+        clearTimeout(saveTimeout);
+        document.getElementById("feedback-status").textContent = "";
+        saveTimeout = setTimeout(() => saveCurrentFeedback(), 800);
+      });
+    }
+
+    // ---- Navigation ----
+    function navigate(delta) {
+      const newIndex = currentIndex + delta;
+      if (newIndex >= 0 && newIndex < EMBEDDED_DATA.runs.length) {
+        saveCurrentFeedback();
+        showRun(newIndex);
+      }
+    }
+
+    function updateNavButtons() {
+      document.getElementById("prev-btn").disabled = currentIndex === 0;
+      document.getElementById("next-btn").disabled =
+        currentIndex === EMBEDDED_DATA.runs.length - 1;
+    }
+
+    // ---- Show a run ----
+    function showRun(index) {
+      currentIndex = index;
+      const run = EMBEDDED_DATA.runs[index];
+
+      // Progress
+      document.getElementById("progress").textContent =
+        `${index + 1} of ${EMBEDDED_DATA.runs.length}`;
+
+      // Prompt
+      document.getElementById("prompt-text").textContent = run.prompt;
+
+      // Config badge
+      const badge = document.getElementById("config-badge");
+      const configMatch = run.id.match(/(with_skill|without_skill|new_skill|old_skill)/);
+      if (configMatch) {
+        const config = configMatch[1];
+        const isBaseline = config === "without_skill" || config === "old_skill";
+        badge.textContent = config.replace(/_/g, " ");
+        badge.className = "config-badge " + (isBaseline ? "config-baseline" : "config-primary");
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+
+      // Outputs
+      renderOutputs(run);
+
+      // Previous outputs
+      renderPrevOutputs(run);
+
+      // Grades
+      renderGrades(run);
+
+      // Previous feedback
+      const prevFb = (EMBEDDED_DATA.previous_feedback || {})[run.id];
+      const prevEl = document.getElementById("prev-feedback");
+      if (prevFb) {
+        document.getElementById("prev-feedback-text").textContent = prevFb;
+        prevEl.style.display = "block";
+      } else {
+        prevEl.style.display = "none";
+      }
+
+      // Feedback
+      document.getElementById("feedback").value = feedbackMap[run.id] || "";
+      document.getElementById("feedback-status").textContent = "";
+
+      updateNavButtons();
+
+      // Track visited runs and promote done button when all visited
+      visitedRuns.add(index);
+      const doneBtn = document.getElementById("done-btn");
+      if (visitedRuns.size >= EMBEDDED_DATA.runs.length) {
+        doneBtn.classList.add("ready");
+      }
+
+      // Scroll main content to top
+      document.querySelector(".main").scrollTop = 0;
+    }
+
+    // ---- Render outputs ----
+    function renderOutputs(run) {
+      const container = document.getElementById("outputs-body");
+      container.innerHTML = "";
+
+      const outputs = run.outputs || [];
+      if (outputs.length === 0) {
+        container.innerHTML = '<div class="empty-state">No output files</div>';
+        return;
+      }
+
+      for (const file of outputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        // Always show file header with download link
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const content = document.createElement("div");
+        content.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          content.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          content.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          content.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(content, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          content.appendChild(a);
+        } else if (file.type === "error") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          pre.style.color = "var(--red)";
+          content.appendChild(pre);
+        }
+
+        fileDiv.appendChild(content);
+        container.appendChild(fileDiv);
+      }
+    }
+
+    // ---- XLSX rendering via SheetJS ----
+    function renderXlsx(container, b64Data) {
+      try {
+        const raw = Uint8Array.from(atob(b64Data), c => c.charCodeAt(0));
+        const wb = XLSX.read(raw, { type: "array" });
+
+        for (let i = 0; i < wb.SheetNames.length; i++) {
+          const sheetName = wb.SheetNames[i];
+          const ws = wb.Sheets[sheetName];
+
+          if (wb.SheetNames.length > 1) {
+            const sheetLabel = document.createElement("div");
+            sheetLabel.style.cssText =
+              "font-weight:600; font-size:0.8rem; color:#b0aea5; margin-top:0.5rem; margin-bottom:0.25rem;";
+            sheetLabel.textContent = "Sheet: " + sheetName;
+            container.appendChild(sheetLabel);
+          }
+
+          const htmlStr = XLSX.utils.sheet_to_html(ws, { editable: false });
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = htmlStr;
+          container.appendChild(wrapper);
+        }
+      } catch (err) {
+        container.textContent = "Error rendering spreadsheet: " + err.message;
+      }
+    }
+
+    // ---- Grades ----
+    function renderGrades(run) {
+      const section = document.getElementById("grades-section");
+      const content = document.getElementById("grades-content");
+
+      if (!run.grading) {
+        section.style.display = "none";
+        return;
+      }
+
+      const grading = run.grading;
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("grades-arrow").classList.remove("open");
+
+      const summary = grading.summary || {};
+      const expectations = grading.expectations || [];
+
+      let html = '<div style="padding: 1rem;">';
+
+      // Summary line
+      const passRate = summary.pass_rate != null
+        ? Math.round(summary.pass_rate * 100) + "%"
+        : "?";
+      const badgeClass = summary.pass_rate >= 0.8 ? "grade-pass" : summary.pass_rate >= 0.5 ? "" : "grade-fail";
+      html += '<div class="grades-summary">';
+      html += '<span class="grade-badge ' + badgeClass + '">' + passRate + '</span>';
+      html += '<span>' + (summary.passed || 0) + ' passed, ' + (summary.failed || 0) + ' failed of ' + (summary.total || 0) + '</span>';
+      html += '</div>';
+
+      // Assertions list
+      html += '<ul class="assertion-list">';
+      for (const exp of expectations) {
+        const statusClass = exp.passed ? "pass" : "fail";
+        const statusIcon = exp.passed ? "\u2713" : "\u2717";
+        html += '<li class="assertion-item">';
+        html += '<span class="assertion-status ' + statusClass + '">' + statusIcon + '</span>';
+        html += '<span>' + escapeHtml(exp.text) + '</span>';
+        if (exp.evidence) {
+          html += '<div class="assertion-evidence">' + escapeHtml(exp.evidence) + '</div>';
+        }
+        html += '</li>';
+      }
+      html += '</ul>';
+
+      html += '</div>';
+      content.innerHTML = html;
+    }
+
+    function toggleGrades() {
+      const content = document.getElementById("grades-content");
+      const arrow = document.getElementById("grades-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Previous outputs (collapsible) ----
+    function renderPrevOutputs(run) {
+      const section = document.getElementById("prev-outputs-section");
+      const content = document.getElementById("prev-outputs-content");
+      const prevOutputs = (EMBEDDED_DATA.previous_outputs || {})[run.id];
+
+      if (!prevOutputs || prevOutputs.length === 0) {
+        section.style.display = "none";
+        return;
+      }
+
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("prev-outputs-arrow").classList.remove("open");
+
+      // Render the files into the content area
+      content.innerHTML = "";
+      const wrapper = document.createElement("div");
+      wrapper.style.padding = "1rem";
+
+      for (const file of prevOutputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const fc = document.createElement("div");
+        fc.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          fc.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          fc.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          fc.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(fc, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          fc.appendChild(a);
+        }
+
+        fileDiv.appendChild(fc);
+        wrapper.appendChild(fileDiv);
+      }
+
+      content.appendChild(wrapper);
+    }
+
+    function togglePrevOutputs() {
+      const content = document.getElementById("prev-outputs-content");
+      const arrow = document.getElementById("prev-outputs-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Feedback (saved to server -> feedback.json) ----
+    function saveCurrentFeedback() {
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // Build reviews array from map
+      const reviews = [];
+      for (const [run_id, feedback] of Object.entries(feedbackMap)) {
+        if (feedback.trim()) {
+          reviews.push({ run_id, feedback, timestamp: new Date().toISOString() });
+        }
+      }
+
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviews, status: "in_progress" }),
+      }).then(() => {
+        document.getElementById("feedback-status").textContent = "Saved";
+      }).catch(() => {
+        // Static mode or server unavailable — no-op on auto-save,
+        // feedback will be downloaded on final submit
+        document.getElementById("feedback-status").textContent = "Will download on submit";
+      });
+    }
+
+    // ---- Done ----
+    function showDoneDialog() {
+      // Save current textarea to feedbackMap (but don't POST yet)
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // POST once with status: complete — include ALL runs so the model
+      // can distinguish "no feedback" (looks good) from "not reviewed"
+      const reviews = [];
+      const ts = new Date().toISOString();
+      for (const r of EMBEDDED_DATA.runs) {
+        reviews.push({ run_id: r.id, feedback: feedbackMap[r.id] || "", timestamp: ts });
+      }
+      const payload = JSON.stringify({ reviews, status: "complete" }, null, 2);
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      }).then(() => {
+        document.getElementById("done-overlay").classList.add("visible");
+      }).catch(() => {
+        // Server not available (static mode) — download as file
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "feedback.json";
+        a.click();
+        URL.revokeObjectURL(url);
+        document.getElementById("done-overlay").classList.add("visible");
+      });
+    }
+
+    function closeDoneDialog() {
+      // Reset status back to in_progress
+      saveCurrentFeedback();
+      document.getElementById("done-overlay").classList.remove("visible");
+    }
+
+    // ---- Toast ----
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("visible");
+      setTimeout(() => toast.classList.remove("visible"), 2000);
+    }
+
+    // ---- Keyboard nav ----
+    document.addEventListener("keydown", (e) => {
+      // Don't capture when typing in textarea
+      if (e.target.tagName === "TEXTAREA") return;
+
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        navigate(-1);
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        navigate(1);
+      }
+    });
+
+    // ---- Util ----
+    function getDownloadUri(file) {
+      if (file.data_uri) return file.data_uri;
+      if (file.data_b64) return "data:application/octet-stream;base64," + file.data_b64;
+      if (file.type === "text") return "data:text/plain;charset=utf-8," + encodeURIComponent(file.content);
+      return "#";
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ---- View switching ----
+    function switchView(view) {
+      document.querySelectorAll(".view-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+      document.querySelector(`[onclick="switchView('${view}')"]`).classList.add("active");
+      document.getElementById("panel-" + view).classList.add("active");
+    }
+
+    // ---- Benchmark rendering ----
+    function renderBenchmark() {
+      const data = EMBEDDED_DATA.benchmark;
+      if (!data) return;
+
+      // Show the tabs
+      document.getElementById("view-tabs").style.display = "flex";
+
+      const container = document.getElementById("benchmark-content");
+      const summary = data.run_summary || {};
+      const metadata = data.metadata || {};
+      const notes = data.notes || [];
+
+      let html = "";
+
+      // Header
+      html += "<h2 style='font-family: Poppins, sans-serif; margin-bottom: 0.5rem;'>Benchmark Results</h2>";
+      html += "<p style='color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;'>";
+      if (metadata.skill_name) html += "<strong>" + escapeHtml(metadata.skill_name) + "</strong> &mdash; ";
+      if (metadata.timestamp) html += metadata.timestamp + " &mdash; ";
+      if (metadata.evals_run) html += "Evals: " + metadata.evals_run.join(", ") + " &mdash; ";
+      html += (metadata.runs_per_configuration || "?") + " runs per configuration";
+      html += "</p>";
+
+      // Summary table
+      html += '<table class="benchmark-table">';
+
+      function fmtStat(stat, pct) {
+        if (!stat) return "—";
+        const suffix = pct ? "%" : "";
+        const m = pct ? (stat.mean * 100).toFixed(0) : stat.mean.toFixed(1);
+        const s = pct ? (stat.stddev * 100).toFixed(0) : stat.stddev.toFixed(1);
+        return m + suffix + " ± " + s + suffix;
+      }
+
+      function deltaClass(val) {
+        if (!val) return "";
+        const n = parseFloat(val);
+        if (n > 0) return "benchmark-delta-positive";
+        if (n < 0) return "benchmark-delta-negative";
+        return "";
+      }
+
+      // Discover config names dynamically (everything except "delta")
+      const configs = Object.keys(summary).filter(k => k !== "delta");
+      const configA = configs[0] || "config_a";
+      const configB = configs[1] || "config_b";
+      const labelA = configA.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const labelB = configB.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const a = summary[configA] || {};
+      const b = summary[configB] || {};
+      const delta = summary.delta || {};
+
+      html += "<thead><tr><th>Metric</th><th>" + escapeHtml(labelA) + "</th><th>" + escapeHtml(labelB) + "</th><th>Delta</th></tr></thead>";
+      html += "<tbody>";
+
+      html += "<tr><td><strong>Pass Rate</strong></td>";
+      html += "<td>" + fmtStat(a.pass_rate, true) + "</td>";
+      html += "<td>" + fmtStat(b.pass_rate, true) + "</td>";
+      html += '<td class="' + deltaClass(delta.pass_rate) + '">' + (delta.pass_rate || "—") + "</td></tr>";
+
+      // Time (only show row if data exists)
+      if (a.time_seconds || b.time_seconds) {
+        html += "<tr><td><strong>Time (s)</strong></td>";
+        html += "<td>" + fmtStat(a.time_seconds, false) + "</td>";
+        html += "<td>" + fmtStat(b.time_seconds, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.time_seconds) + '">' + (delta.time_seconds ? delta.time_seconds + "s" : "—") + "</td></tr>";
+      }
+
+      // Tokens (only show row if data exists)
+      if (a.tokens || b.tokens) {
+        html += "<tr><td><strong>Tokens</strong></td>";
+        html += "<td>" + fmtStat(a.tokens, false) + "</td>";
+        html += "<td>" + fmtStat(b.tokens, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.tokens) + '">' + (delta.tokens || "—") + "</td></tr>";
+      }
+
+      html += "</tbody></table>";
+
+      // Per-eval breakdown (if runs data available)
+      const runs = data.runs || [];
+      if (runs.length > 0) {
+        const evalIds = [...new Set(runs.map(r => r.eval_id))].sort((a, b) => a - b);
+
+        html += "<h3 style='font-family: Poppins, sans-serif; margin-bottom: 0.75rem;'>Per-Eval Breakdown</h3>";
+
+        const hasTime = runs.some(r => r.result && r.result.time_seconds != null);
+        const hasErrors = runs.some(r => r.result && r.result.errors > 0);
+
+        for (const evalId of evalIds) {
+          const evalRuns = runs.filter(r => r.eval_id === evalId);
+          const evalName = evalRuns[0] && evalRuns[0].eval_name ? evalRuns[0].eval_name : "Eval " + evalId;
+
+          html += "<h4 style='font-family: Poppins, sans-serif; margin: 1rem 0 0.5rem; color: var(--text);'>" + escapeHtml(evalName) + "</h4>";
+          html += '<table class="benchmark-table">';
+          html += "<thead><tr><th>Config</th><th>Run</th><th>Pass Rate</th>";
+          if (hasTime) html += "<th>Time (s)</th>";
+          if (hasErrors) html += "<th>Crashes During Execution</th>";
+          html += "</tr></thead>";
+          html += "<tbody>";
+
+          // Group by config and render with average rows
+          const configGroups = [...new Set(evalRuns.map(r => r.configuration))];
+          for (let ci = 0; ci < configGroups.length; ci++) {
+            const config = configGroups[ci];
+            const configRuns = evalRuns.filter(r => r.configuration === config);
+            if (configRuns.length === 0) continue;
+
+            const rowClass = ci === 0 ? "benchmark-row-with" : "benchmark-row-without";
+            const configLabel = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+            for (const run of configRuns) {
+              const r = run.result || {};
+              const prClass = r.pass_rate >= 0.8 ? "benchmark-delta-positive" : r.pass_rate < 0.5 ? "benchmark-delta-negative" : "";
+              html += '<tr class="' + rowClass + '">';
+              html += "<td>" + configLabel + "</td>";
+              html += "<td>" + run.run_number + "</td>";
+              html += '<td class="' + prClass + '">' + ((r.pass_rate || 0) * 100).toFixed(0) + "% (" + (r.passed || 0) + "/" + (r.total || 0) + ")</td>";
+              if (hasTime) html += "<td>" + (r.time_seconds != null ? r.time_seconds.toFixed(1) : "—") + "</td>";
+              if (hasErrors) html += "<td>" + (r.errors || 0) + "</td>";
+              html += "</tr>";
+            }
+
+            // Average row
+            const rates = configRuns.map(r => (r.result || {}).pass_rate || 0);
+            const avgRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+            const avgPrClass = avgRate >= 0.8 ? "benchmark-delta-positive" : avgRate < 0.5 ? "benchmark-delta-negative" : "";
+            html += '<tr class="benchmark-row-avg ' + rowClass + '">';
+            html += "<td>" + configLabel + "</td>";
+            html += "<td>Avg</td>";
+            html += '<td class="' + avgPrClass + '">' + (avgRate * 100).toFixed(0) + "%</td>";
+            if (hasTime) {
+              const times = configRuns.map(r => (r.result || {}).time_seconds).filter(t => t != null);
+              html += "<td>" + (times.length ? (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1) : "—") + "</td>";
+            }
+            if (hasErrors) html += "<td></td>";
+            html += "</tr>";
+          }
+          html += "</tbody></table>";
+
+          // Per-assertion detail for this eval
+          const runsWithExpectations = {};
+          for (const config of configGroups) {
+            runsWithExpectations[config] = evalRuns.filter(r => r.configuration === config && r.expectations && r.expectations.length > 0);
+          }
+          const hasAnyExpectations = Object.values(runsWithExpectations).some(runs => runs.length > 0);
+          if (hasAnyExpectations) {
+            // Collect all unique assertion texts across all configs
+            const allAssertions = [];
+            const seen = new Set();
+            for (const config of configGroups) {
+              for (const run of runsWithExpectations[config]) {
+                for (const exp of (run.expectations || [])) {
+                  if (!seen.has(exp.text)) {
+                    seen.add(exp.text);
+                    allAssertions.push(exp.text);
+                  }
+                }
+              }
+            }
+
+            html += '<table class="benchmark-table" style="margin-top: 0.5rem;">';
+            html += "<thead><tr><th>Assertion</th>";
+            for (const config of configGroups) {
+              const label = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+              html += "<th>" + escapeHtml(label) + "</th>";
+            }
+            html += "</tr></thead><tbody>";
+
+            for (const assertionText of allAssertions) {
+              html += "<tr><td>" + escapeHtml(assertionText) + "</td>";
+
+              for (const config of configGroups) {
+                html += "<td>";
+                for (const run of runsWithExpectations[config]) {
+                  const exp = (run.expectations || []).find(e => e.text === assertionText);
+                  if (exp) {
+                    const cls = exp.passed ? "benchmark-delta-positive" : "benchmark-delta-negative";
+                    const icon = exp.passed ? "\u2713" : "\u2717";
+                    html += '<span class="' + cls + '" title="Run ' + run.run_number + ': ' + escapeHtml(exp.evidence || "") + '">' + icon + "</span> ";
+                  } else {
+                    html += "— ";
+                  }
+                }
+                html += "</td>";
+              }
+              html += "</tr>";
+            }
+            html += "</tbody></table>";
+          }
+        }
+      }
+
+      // Notes
+      if (notes.length > 0) {
+        html += '<div class="benchmark-notes">';
+        html += "<h3>Analysis Notes</h3>";
+        html += "<ul>";
+        for (const note of notes) {
+          html += "<li>" + escapeHtml(note) + "</li>";
+        }
+        html += "</ul></div>";
+      }
+
+      container.innerHTML = html;
+    }
+
+    // ---- Start ----
+    init();
+    renderBenchmark();
+  </script>
+</body>
+</html>
